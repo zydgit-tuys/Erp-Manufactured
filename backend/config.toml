@@ -1,0 +1,22 @@
+# Supabase Configuration File for Ziyada ERP
+# This file is used for local development and deployment
+
+project_id = "kivwoupcuguiuwkxwphc"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+
+[db.pooler]
+enabled = false

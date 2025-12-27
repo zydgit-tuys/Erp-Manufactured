@@ -1,0 +1,289 @@
+
+> vite_react_shadcn_ts@0.0.0 test
+> npm run test:backend && npm run test:frontend --verbose
+
+
+> vite_react_shadcn_ts@0.0.0 test:backend
+> jest
+
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+PASS backend/src/__tests__/logger.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+FAIL backend/src/__tests__/setup.ts
+  ΓùÅ Test suite failed to run
+
+    Your test suite must contain at least one test.
+
+      at onResult (node_modules/@jest/core/build/index.js:1057:18)
+      at node_modules/@jest/core/build/index.js:1127:165
+      at node_modules/emittery/index.js:363:13
+          at Array.map (<anonymous>)
+      at Emittery.emit (node_modules/emittery/index.js:361:23)
+
+PASS backend/src/__tests__/response.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+FAIL backend/src/__tests__/integration/tenant-isolation.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should isolate company data via RLS
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should isolate COA between companies
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should have RLS enabled on all core tables
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should prevent cross-tenant COA access (if not service role)
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/period-lock.test.ts
+  ΓùÅ Test suite failed to run
+
+    backend/src/__tests__/integration/period-lock.test.ts:6:32 - error TS2307: Cannot find module '../config/supabase' or its corresponding type declarations.
+
+    6 import { supabaseServer } from '../config/supabase';
+                                     ~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/period-lock.test.ts:7:36 - error TS2307: Cannot find module '../services/inventory.service' or its corresponding type declarations.
+
+    7 import { receiveRawMaterial } from '../services/inventory.service';
+                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/period-lock.test.ts:14:8 - error TS2307: Cannot find module '../utils/test-helpers' or its corresponding type declarations.
+
+    14 } from '../utils/test-helpers';
+              ~~~~~~~~~~~~~~~~~~~~~~~
+
+FAIL backend/src/__tests__/integration/negative-stock.test.ts
+  ΓùÅ Test suite failed to run
+
+    backend/src/__tests__/integration/negative-stock.test.ts:6:32 - error TS2307: Cannot find module '../config/supabase' or its corresponding type declarations.
+
+    6 import { supabaseServer } from '../config/supabase';
+                                     ~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:7:77 - error TS2307: Cannot find module '../services/inventory.service' or its corresponding type declarations.
+
+    7 import { receiveRawMaterial, issueRawMaterial, getRawMaterialBalance } from '../services/inventory.service';
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:14:8 - error TS2307: Cannot find module '../utils/test-helpers' or its corresponding type declarations.
+
+    14 } from '../utils/test-helpers';
+              ~~~~~~~~~~~~~~~~~~~~~~~
+
+FAIL backend/src/__tests__/integration/transaction-atomicity.test.ts
+  ΓùÅ Test suite failed to run
+
+    backend/src/__tests__/integration/transaction-atomicity.test.ts:6:32 - error TS2307: Cannot find module '../config/supabase' or its corresponding type declarations.
+
+    6 import { supabaseServer } from '../config/supabase';
+                                     ~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/transaction-atomicity.test.ts:13:8 - error TS2307: Cannot find module '../utils/test-helpers' or its corresponding type declarations.
+
+    13 } from '../utils/test-helpers';
+              ~~~~~~~~~~~~~~~~~~~~~~~
+
+FAIL backend/src/__tests__/integration/journal-balance.test.ts
+  ΓùÅ Test suite failed to run
+
+    backend/src/__tests__/integration/journal-balance.test.ts:6:32 - error TS2307: Cannot find module '../config/supabase' or its corresponding type declarations.
+
+    6 import { supabaseServer } from '../config/supabase';
+                                     ~~~~~~~~~~~~~~~~~~~~
+    backend/src/__tests__/integration/journal-balance.test.ts:7:52 - error TS2307: Cannot find module '../utils/test-helpers' or its corresponding type declarations.
+
+    7 import { createTestCompany, cleanupTestData } from '../utils/test-helpers';
+                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+
+FAIL backend/src/__tests__/integration/company.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should create company with unique code
+
+    permission denied for table companies
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should seed COA template on company creation
+
+    expect(received).toBeNull()
+
+    Received: {"code": "22P02", "details": null, "hint": null, "message": "invalid input syntax for type uuid: \"undefined\""}
+
+      51 |             .eq('company_id', testCompanyId);
+      52 |
+    > 53 |         expect(error).toBeNull();
+         |                       ^
+      54 |         expect(accounts).toBeDefined();
+      55 |         expect(accounts!.length).toBeGreaterThan(50); // Should have 60+ accounts
+      56 |     });
+
+      at backend/src/__tests__/integration/company.test.ts:53:23
+      at fulfilled (backend/src/__tests__/integration/company.test.ts:5:58)
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should enforce unique company code
+
+    thrown: Object {
+      "message": "",
+    }
+
+      56 |     });
+      57 |
+    > 58 |     it('should enforce unique company code', async () => {
+         |       ^
+      59 |         const isUnique = await isCompanyCodeUnique('TEST01');
+      60 |         expect(typeof isUnique).toBe('boolean');
+      61 |     });
+
+      at backend/src/__tests__/integration/company.test.ts:58:7
+      at Object.<anonymous> (backend/src/__tests__/integration/company.test.ts:16:9)
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should update company details
+
+    invalid input syntax for type uuid: "undefined"
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should deactivate company (soft delete)
+
+    invalid input syntax for type uuid: "undefined"
+
+
+FAIL backend/src/__tests__/integration/coa.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get all accounts for company
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get account by code
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get accounts by type
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should create new account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should enforce unique account code per company
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should update non-system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should prevent updating system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should deactivate non-system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should prevent deleting system account
+
+    permission denied for table companies
+
+
+Test Suites: 8 failed, 2 passed, 10 total
+Tests:       18 failed, 11 passed, 29 total
+Snapshots:   0 total
+Time:        2.764 s, estimated 3 s
+Ran all test suites.

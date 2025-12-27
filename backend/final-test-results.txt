@@ -1,0 +1,344 @@
+
+> vite_react_shadcn_ts@0.0.0 test
+> npm run test:backend && npm run test:frontend
+
+
+> vite_react_shadcn_ts@0.0.0 test:backend
+> jest
+
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) message TS151001: If you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+FAIL backend/src/__tests__/setup.ts
+  ΓùÅ Test suite failed to run
+
+    Your test suite must contain at least one test.
+
+      at onResult (node_modules/@jest/core/build/index.js:1057:18)
+      at node_modules/@jest/core/build/index.js:1127:165
+      at node_modules/emittery/index.js:363:13
+          at Array.map (<anonymous>)
+      at Emittery.emit (node_modules/emittery/index.js:361:23)
+
+PASS backend/src/__tests__/response.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+PASS backend/src/__tests__/logger.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+FAIL backend/src/__tests__/integration/company.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should create company with unique code
+
+    permission denied for table companies
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should seed COA template on company creation
+
+    permission denied for table companies
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should verify company code is unique via database
+
+    permission denied for table companies
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should update company details via direct database access
+
+    permission denied for table companies
+
+
+  ΓùÅ Company Service Integration Tests ΓÇ║ should deactivate company (soft delete)
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/coa.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get all accounts for company
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get account by code
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should get accounts by type
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should create new account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should enforce unique account code per company
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should update non-system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should prevent updating system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should deactivate non-system account
+
+    permission denied for table companies
+
+
+  ΓùÅ Chart of Accounts Integration Tests ΓÇ║ should prevent deleting system account
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/tenant-isolation.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should isolate company data via RLS
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should isolate COA between companies
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should have RLS enabled on all core tables
+
+    permission denied for table companies
+
+
+  ΓùÅ Tenant Isolation (RLS) Tests ΓÇ║ should prevent cross-tenant COA access (if not service role)
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/negative-stock.test.ts
+  ΓùÅ Test suite failed to run
+
+    backend/src/__tests__/integration/negative-stock.test.ts:87:13 - error TS2353: Object literal may only specify known properties, and 'unit_cost' does not exist in type 'RawMaterialIssueParams'.
+
+    87             unit_cost: 100,
+                   ~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:117:17 - error TS2353: Object literal may only specify known properties, and 'unit_cost' does not exist in type 'RawMaterialIssueParams'.
+
+    117                 unit_cost: 100,
+                        ~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:144:13 - error TS2353: Object literal may only specify known properties, and 'unit_cost' does not exist in type 'RawMaterialIssueParams'.
+
+    144             unit_cost: 100,
+                    ~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:158:13 - error TS2353: Object literal may only specify known properties, and 'unit_cost' does not exist in type 'RawMaterialIssueParams'.
+
+    158             unit_cost: 100,
+                    ~~~~~~~~~
+    backend/src/__tests__/integration/negative-stock.test.ts:201:13 - error TS2353: Object literal may only specify known properties, and 'unit_cost' does not exist in type 'RawMaterialIssueParams'.
+
+    201             unit_cost: 100,
+                    ~~~~~~~~~
+
+FAIL backend/src/__tests__/integration/journal-balance.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Journal Balance Validation ΓÇ║ should accept balanced journal entry (debit = credit)
+
+    permission denied for table companies
+
+
+  ΓùÅ Journal Balance Validation ΓÇ║ should reject unbalanced journal entry
+
+    permission denied for table companies
+
+
+  ΓùÅ Journal Balance Validation ΓÇ║ should handle multi-line transaction balance
+
+    permission denied for table companies
+
+
+  ΓùÅ Journal Balance Validation ΓÇ║ should handle currency/rounding edge cases
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/period-lock.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Period Lock Enforcement ΓÇ║ should allow transactions in open period
+
+    permission denied for table companies
+
+
+  ΓùÅ Period Lock Enforcement ΓÇ║ should reject transactions in closed period
+
+    permission denied for table companies
+
+
+  ΓùÅ Period Lock Enforcement ΓÇ║ should reject backdated transactions to closed period
+
+    permission denied for table companies
+
+
+  ΓùÅ Period Lock Enforcement ΓÇ║ should enforce period close workflow
+
+    permission denied for table companies
+
+
+FAIL backend/src/__tests__/integration/transaction-atomicity.test.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (2) from backend\.env.test -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      Test environment loaded: {
+        NODE_ENV: 'test',
+        SUPABASE_URL: 'Γ£ô Set',
+        SUPABASE_SERVICE_ROLE_KEY: 'Γ£ô Set'
+      }
+
+      at Object.<anonymous> (backend/src/__tests__/setup.ts:15:9)
+
+  ΓùÅ Transaction Atomicity ΓÇ║ should rollback entire transaction on error
+
+    permission denied for table companies
+
+
+  ΓùÅ Transaction Atomicity ΓÇ║ should handle partial failure in multi-table transaction
+
+    permission denied for table companies
+
+
+  ΓùÅ Transaction Atomicity ΓÇ║ should simulate network interruption and verify data integrity
+
+    permission denied for table companies
+
+
+  ΓùÅ Transaction Atomicity ΓÇ║ should ensure concurrent transaction integrity
+
+    permission denied for table companies
+
+
+Test Suites: 8 failed, 2 passed, 10 total
+Tests:       30 failed, 11 passed, 41 total
+Snapshots:   0 total
+Time:        3.215 s, estimated 5 s
+Ran all test suites.
