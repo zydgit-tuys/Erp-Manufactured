@@ -59,6 +59,87 @@ schedule
 import
 reconcile
 
+📌 Edge Functions + Node.js di sesuaikan dengan kondisi "berat atau tidak" nya:
+LOGIC BERAT DISINI ADALAH :
+❌ CPU-heavy / batch besar / long-running
+→ JANGAN di Edge → pakai Node.js (hybrid)
+✅ Banyak langkah tapi ringan (IO-bound, decision tree, validasi)
+→ TETAP di Edge (aman & cepat)
+
+❌ LOGIC BERAT YANG TIDAK BOLEH DI EDGE
+Kalau logic kamu memenuhi salah satu di bawah ini → STOP EDGE:
+1️⃣ CPU-bound
+Contoh:
+perhitungan besar
+loop ribuan baris
+matching kompleks
+parsing file besar (10–50MB)
+Edge Functions:
+cold-start sensitive
+memory terbatas
+timeout pendek
+➡️ Edge akan flaky & mahal secara operasional
+
+2️⃣ Long-running / Stateful
+Contoh:
+proses > 10–15 detik
+perlu retry internal
+perlu queue / progress tracking
+➡️ Edge bukan worker, dia handler cepat.
+
+3️⃣ Batch Historis / Rekalkulasi
+Contoh:
+rebuild stock history
+recompute finance 6 bulan
+backfill SKU
+➡️ Ini HARUS Node.js (atau job runner)
+
+✅ LOGIC “BERAT” YANG MASIH AMAN DI EDGE
+Sekarang yang BOLEH tetap di Edge, meski terlihat “kompleks”:
+✔️ Decision-heavy tapi ringan
+Contoh:
+order allocation
+supplier selection
+procurement decision
+settlement mapping
+reconciliation check
+
+Kenapa aman?
+I/O bound (DB calls)
+sedikit loop
+cepat selesai
+idempotent
+➡️ Ini cocok sempurna untuk Edge.
+
+🧠 ATURAN EMAS (PAKAI INI SEBAGAI FILTER)
+Jawab 3 pertanyaan ini:
+Q1. Apakah logic ini harus selesai < 2–3 detik?
+YA → Edge OK
+TIDAK → Node
+
+Q2. Apakah logic ini perlu queue / retry internal?
+YA → Node
+TIDAK → Edge
+
+Q3. Apakah logic ini menyentuh ribuan record sekaligus?
+YA → Node
+TIDAK → Edge
+
+Kalau 1 saja jawabannya “YA” ke Node → jangan paksakan Edge.
+
+🧱 ARSITEKTUR YANG PALING WARAS (HYBRID SELEKTIF)
+Bukan “Edge vs Node”, tapi Edge + Node (terpisah per kelas tugas)
+
+Frontend
+   │
+   ▼
+Edge Functions  ──►  PostgreSQL
+   │
+   ├─ Fast workflows (allocation, commit, receive)
+   │
+   ▼
+Node.js Workers (heavy / batch / async)
+
 📌 UI
 Tugas:
 tampilkan signal

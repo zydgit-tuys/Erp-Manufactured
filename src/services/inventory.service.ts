@@ -25,47 +25,49 @@ import type {
 export async function receiveRawMaterial(
   data: Omit<RawMaterialLedgerInsert, 'transaction_type' | 'qty_out' | 'total_cost'>
 ): Promise<RawMaterialLedger> {
-  const entry: RawMaterialLedgerInsert = {
-    ...data,
-    transaction_type: 'RECEIPT',
-    qty_out: 0,
-    total_cost: data.qty_in * data.unit_cost,
-  };
+  // Call Edge Function instead of direct Supabase
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const { data: result, error } = await supabase
-    .from('raw_material_ledger')
-    .insert(entry)
-    .select()
-    .single();
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/receive-raw-material`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify(data),
+  });
 
-  if (error) throw error;
-  return result;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to receive raw material');
+  }
+
+  const result = await response.json();
+  return result.data;
 }
 
 export async function issueRawMaterial(
   data: Omit<RawMaterialLedgerInsert, 'transaction_type' | 'qty_in' | 'total_cost'>
 ): Promise<RawMaterialLedger> {
-  // Validate no negative stock
-  const balance = await getRawMaterialBalance(data.company_id, data.material_id, data.warehouse_id, data.bin_id);
-  if (balance && balance.current_qty < data.qty_out) {
-    throw new Error(`Insufficient stock. Available: ${balance.current_qty}, Requested: ${data.qty_out}`);
+  // Call Edge Function - database trigger will validate stock
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/issue-raw-material`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to issue raw material');
   }
 
-  const entry: RawMaterialLedgerInsert = {
-    ...data,
-    transaction_type: 'ISSUE',
-    qty_in: 0,
-    total_cost: data.qty_out * data.unit_cost,
-  };
-
-  const { data: result, error } = await supabase
-    .from('raw_material_ledger')
-    .insert(entry)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return result;
+  const result = await response.json();
+  return result.data;
 }
 
 export async function getRawMaterialLedger(
@@ -229,21 +231,25 @@ export async function getAllWipBalances(companyId: string): Promise<WipBalance[]
 export async function receiveFinishedGoods(
   data: Omit<FinishedGoodsLedgerInsert, 'transaction_type' | 'qty_out' | 'total_cost'>
 ): Promise<FinishedGoodsLedger> {
-  const entry: FinishedGoodsLedgerInsert = {
-    ...data,
-    transaction_type: 'PRODUCTION_IN',
-    qty_out: 0,
-    total_cost: data.qty_in * data.unit_cost,
-  };
+  // Call Edge Function
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const { data: result, error } = await supabase
-    .from('finished_goods_ledger')
-    .insert(entry)
-    .select()
-    .single();
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/receive-finished-goods`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify(data),
+  });
 
-  if (error) throw error;
-  return result;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to receive finished goods');
+  }
+
+  const result = await response.json();
+  return result.data;
 }
 
 export async function issueFinishedGoods(
@@ -251,10 +257,10 @@ export async function issueFinishedGoods(
 ): Promise<FinishedGoodsLedger> {
   // Validate no negative stock
   const balance = await getFinishedGoodsBalance(
-    data.company_id, 
-    data.product_id, 
-    data.variant_id, 
-    data.warehouse_id, 
+    data.company_id,
+    data.product_id,
+    data.variant_id,
+    data.warehouse_id,
     data.bin_id
   );
   if (balance && balance.current_qty < data.qty_out) {
