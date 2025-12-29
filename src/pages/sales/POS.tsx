@@ -1,15 +1,5 @@
+import { useState } from 'react';
 import { PaymentMethod } from '@/types/sales';
-
-// State
-const [searchQuery, setSearchQuery] = useState('');
-const [cart, setCart] = useState<{
-    variantId: string;
-    name: string;
-    sku: string;
-    price: number;
-    qty: number;
-}[]>([]);
-const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
     Search, ShoppingCart, CreditCard, Banknote, QrCode,
-    Trash, Plus, Minus, RefreshCw, Loader2, ArrowLeft
+    Trash, Plus, Minus, RefreshCw, Loader2, ArrowLeft, ShoppingBag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubmitPOSOrder } from '@/hooks/useSales';
