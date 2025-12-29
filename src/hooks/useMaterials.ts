@@ -10,7 +10,10 @@ export const useMaterials = () => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('materials')
-                .select('*')
+                .select(`
+                    *,
+                    category:material_categories(id, code, name)
+                `)
                 .order('name');
 
             if (error) throw error;
@@ -25,7 +28,10 @@ export const useMaterial = (id: string) => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('materials')
-                .select('*')
+                .select(`
+                    *,
+                    category:material_categories(id, code, name)
+                `)
                 .eq('id', id)
                 .single();
 

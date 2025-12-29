@@ -113,6 +113,7 @@ export default function Materials() {
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Unit</TableHead>
                   <TableHead className="text-right">Min Stock</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -129,6 +130,9 @@ export default function Materials() {
                       {material.code}
                     </TableCell>
                     <TableCell className="font-medium">{material.name}</TableCell>
+                    <TableCell>
+                      {(material as any).category?.name || '-'}
+                    </TableCell>
                     <TableCell>{material.unit_of_measure}</TableCell>
                     <TableCell className="text-right">{material.reorder_level}</TableCell>
                     <TableCell className="text-center">
@@ -140,7 +144,7 @@ export default function Materials() {
                 ))}
                 {filteredMaterials.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <Layers className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="text-muted-foreground">No materials found</p>
                     </TableCell>
