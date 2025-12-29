@@ -155,25 +155,41 @@ fashion-forge/
 │   ├── pages/                   # Page components
 │   └── lib/                     # Utilities
 │
-├── backend/supabase/            # Backend (Supabase)
-│   ├── migrations/              # Database migrations (47+ files)
-│   │   ├── 020_additional_check_constraints.sql
-│   │   ├── 021_auto_journal_setup.sql
-│   │   └── ...
+├── backend/                     # Backend services
+│   ├── supabase/                # Supabase configuration
+│   │   ├── migrations/          # Database migrations (48 files)
+│   │   │   ├── 001_foundation_companies.sql
+│   │   │   ├── 040_ledger_immutability.sql
+│   │   │   ├── 041_period_lock_enforcement.sql
+│   │   │   ├── 042_negative_stock_prevention.sql
+│   │   │   ├── 043_unbalanced_journal_check.sql
+│   │   │   └── ...
+│   │   │
+│   │   └── functions/           # Edge Functions (Deno)
+│   │       ├── _shared/         # Shared utilities
+│   │       │   ├── logger.ts    # Structured logging
+│   │       │   ├── auto-journal.ts  # Auto journaling engine
+│   │       │   └── account-mapping.ts
+│   │       │
+│   │       ├── receive-raw-material/
+│   │       ├── issue-raw-material/
+│   │       ├── receive-finished-goods/
+│   │       ├── issue-finished-goods/
+│   │       ├── post-adjustment/
+│   │       ├── post-transfer/
+│   │       ├── post-goods-receipt/
+│   │       └── post-delivery-order/
 │   │
-│   └── functions/               # Edge Functions (Deno)
-│       ├── _shared/             # Shared utilities
-│       │   ├── logger.ts        # Structured logging
-│       │   ├── auto-journal.ts  # Auto journaling engine
-│       │   └── account-mapping.ts
-│       │
-│       ├── receive-raw-material/
-│       ├── issue-raw-material/
-│       ├── receive-finished-goods/
-│       ├── issue-finished-goods/
-│       └── post-adjustment/
+│   ├── config.toml              # Supabase project config
+│   └── deploy-functions.ps1    # Deployment script
 │
 ├── docs/                        # Documentation
+│   ├── phase1_database_invariants.md
+│   ├── phase2_backend_orchestration.md
+│   ├── phase3_frontend_cleanup.md
+│   ├── phase4_module_completion.md
+│   └── TESTING_QUICK_START.md
+│
 └── public/                      # Static assets
 ```
 
