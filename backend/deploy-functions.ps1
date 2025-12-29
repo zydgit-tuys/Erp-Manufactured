@@ -29,7 +29,8 @@ foreach ($func in $functions) {
     if ($LASTEXITCODE -eq 0) {
         Write-Host "   ✅ Success: $func" -ForegroundColor Green
         $successCount++
-    } else {
+    }
+    else {
         Write-Host "   ❌ Failed: $func" -ForegroundColor Red
         Write-Host "   Error: $result" -ForegroundColor Red
         $failCount++
@@ -48,7 +49,8 @@ if ($failCount -eq 0) {
     Write-Host ""
     Write-Host "🎉 All Edge Functions deployed successfully!" -ForegroundColor Green
     Write-Host "🔗 Dashboard: https://supabase.com/dashboard/project/$PROJECT_REF/functions" -ForegroundColor Cyan
-} else {
+}
+else {
     Write-Host ""
     Write-Host "⚠️  Some deployments failed. Please check the errors above." -ForegroundColor Yellow
 }

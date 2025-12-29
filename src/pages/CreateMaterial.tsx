@@ -58,10 +58,16 @@ export default function CreateMaterial() {
     }, [existingMaterial]);
 
     const handleSave = async () => {
+        // Convert empty string to null for UUID fields
+        const dataToSave = {
+            ...formData,
+            category_id: formData.category_id || null
+        };
+
         if (isEditMode && id) {
-            await updateMaterial.mutateAsync({ id, ...formData });
+            await updateMaterial.mutateAsync({ id, ...dataToSave });
         } else {
-            await createMaterial.mutateAsync(formData);
+            await createMaterial.mutateAsync(dataToSave);
         }
         navigate('/materials');
     };
