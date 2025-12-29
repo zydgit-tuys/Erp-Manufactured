@@ -45,8 +45,8 @@ export default function CreateProduct() {
         code: '',
         name: '',
         category: '',
-        uom: 'PCS',
-        base_price: 0,
+        unit_of_measure: 'PCS',
+        selling_price: 0,
         standard_cost: 0,
         barcode: '',
         notes: '',
@@ -64,8 +64,8 @@ export default function CreateProduct() {
                 code: existingProduct.code,
                 name: existingProduct.name,
                 category: existingProduct.category || '',
-                uom: existingProduct.uom || 'PCS',
-                base_price: existingProduct.base_price, // selling_price
+                unit_of_measure: existingProduct.unit_of_measure || 'PCS',
+                selling_price: existingProduct.selling_price,
                 standard_cost: (existingProduct as any).standard_cost || 0, // Cast if type missing
                 barcode: (existingProduct as any).barcode || '',
                 notes: (existingProduct as any).notes || '',
@@ -92,7 +92,7 @@ export default function CreateProduct() {
                 id: crypto.randomUUID(), // Temp ID
                 size_id: '',
                 color_id: '',
-                price: product.base_price,
+                price: product.selling_price,
                 cost: product.standard_cost // Default to standard cost
             }
         ]);
@@ -236,17 +236,17 @@ export default function CreateProduct() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Base Price (IDR)</Label>
+                                    <Label>Selling Price (IDR)</Label>
                                     <Input
                                         type="number"
                                         min="0"
-                                        value={product.base_price}
-                                        onChange={e => setProduct({ ...product, base_price: parseFloat(e.target.value) })}
+                                        value={product.selling_price}
+                                        onChange={e => setProduct({ ...product, selling_price: parseFloat(e.target.value) })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Unit of Measure</Label>
-                                    <Select value={product.uom} onValueChange={val => setProduct({ ...product, uom: val })}>
+                                    <Select value={product.unit_of_measure} onValueChange={val => setProduct({ ...product, unit_of_measure: val })}>
                                         <SelectTrigger><SelectValue placeholder="Select UOM" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="PCS">PCS</SelectItem>

@@ -125,7 +125,7 @@ export default function Products() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {products?.reduce((sum, p) => sum + (p.variant_count || 0), 0) || 0}
+                {products?.reduce((sum, p) => sum + (p.variants?.length || 0), 0) || 0}
               </div>
             </CardContent>
           </Card>
@@ -198,12 +198,12 @@ export default function Products() {
                       <TableCell className="text-right text-muted-foreground">
                         Rp {(product.standard_cost || 0).toLocaleString('id-ID')}
                       </TableCell>
-                      <TableCell className="text-right">
-                        Rp {(product.base_price || 0).toLocaleString('id-ID')}
+                      <TableCell className="text-right font-medium">
+                        Rp {(product.selling_price || 0).toLocaleString('id-ID')}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="secondary" className="font-mono">
-                          {product.variant_count || 0} SKUs
+                          {product.variants?.length || 0} SKUs
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
