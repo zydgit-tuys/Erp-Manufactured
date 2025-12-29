@@ -571,7 +571,7 @@ export const useCreateVendor = () => {
                     company_id: companyId,
                     created_by: userId,
                     ...payload,
-                    is_active: payload.is_active ?? true
+                    // is_active removed, uses status enum
                 })
                 .select()
                 .single();
@@ -642,7 +642,7 @@ export const useCreateCustomer = () => {
                     company_id: companyId,
                     created_by: userId,
                     ...payload,
-                    is_active: payload.is_active ?? true
+                    // is_active removed, uses status enum
                 })
                 .select()
                 .single();
