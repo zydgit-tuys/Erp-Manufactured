@@ -51,6 +51,7 @@ import SalesOrders from "./pages/sales/SalesOrders";
 import CreateSalesOrder from "./pages/sales/CreateSalesOrder";
 import POS from "./pages/sales/POS";
 import Shipments from "./pages/sales/Shipments";
+import ShipmentDetails from "./pages/sales/ShipmentDetails";
 import SalesInvoices from "./pages/sales/SalesInvoices";
 
 // Placeholders
@@ -119,6 +120,7 @@ const App = () => (
                 <Route path="/sales/pos" element={<ProtectedRoute><POS /></ProtectedRoute>} />
                 <Route path="/sales/invoices" element={<ProtectedRoute><SalesInvoices /></ProtectedRoute>} />
                 <Route path="/sales/shipments" element={<ProtectedRoute><Shipments /></ProtectedRoute>} />
+                <Route path="/sales/ship/:id" element={<ProtectedRoute><ShipmentDetails /></ProtectedRoute>} />
 
                 {/* Placeholders */}
                 <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
