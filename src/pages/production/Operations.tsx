@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useWorkCenters, useOperations } from '@/hooks/useProduction';
+import { useWorkCenters, useOperations, useCreateWorkCenter, useCreateOperation } from '@/hooks/useProduction';
 import { Plus, Settings, Factory, Gauge } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from 'react';
@@ -12,13 +12,54 @@ import { useApp } from '@/contexts/AppContext';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { ErrorState } from '@/components/ui/error-state';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Operations() {
     const { companyId } = useApp();
     const { data: workCenters, isLoading: wcLoading, error: wcError, refetch: wcRefetch } = useWorkCenters(companyId);
     const { data: operations, isLoading: opLoading, error: opError, refetch: opRefetch } = useOperations(companyId);
+
+    const createWorkCenter = useCreateWorkCenter();
+    const createOperation = useCreateOperation();
+
+    // Dialog States
     const [isWCCreateOpen, setIsWCCreateOpen] = useState(false);
     const [isOpCreateOpen, setIsOpCreateOpen] = useState(false);
+
+    // Form States
+    const [wcForm, setWcForm] = useState({ code: '', name: '', capacity_per_day: 8, cost_per_hour: 0 });
+    const [opForm, setOpForm] = useState({ code: '', name: '', standard_time_minutes: 0, work_center_id: '' });
+
+    const handleCreateWorkCenter = async () => {
+        try {
+            await createWorkCenter.mutateAsync(wcForm);
+            setIsWCCreateOpen(false);
+            setWcForm({ code: '', name: '', capacity_per_day: 8, cost_per_hour: 0 });
+        } catch (error) {
+            // Error handled by hook
+        }
+    };
+
+    const handleCreateOperation = async () => {
+        try {
+            await createOperation.mutateAsync(opForm);
+            setIsOpCreateOpen(false);
+            setOpForm({ code: '', name: '', standard_time_minutes: 0, work_center_id: '' });
+        } catch (error) {
+            // Error handled by hook
+        }
+    };
 
     if (wcError || opError) {
         return (
@@ -189,6 +230,77 @@ export default function Operations() {
                         </Card>
                     </TabsContent>
                 </Tabs>
+
+                {/* Create Work Center Dialog */}
+                <Dialog open={isWCCreateOpen} onOpenChange={setIsWCCreateOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add Work Center</DialogTitle>
+                            <DialogDescription>Define a new production station or line.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="wc-code" className="text-right">Code</Label>
+                                <Input id="wc-code" value={wcForm.code} onChange={e => setWcForm({ ...wcForm, code: e.target.value })} className="col-span-3" placeholder="e.g. SEW-01" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="wc-name" className="text-right">Name</Label>
+                                <Input id="wc-name" value={wcForm.name} onChange={e => setWcForm({ ...wcForm, name: e.target.value })} className="col-span-3" placeholder="e.g. Sewing Line 1" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="wc-cap" className="text-right">Capacity (Hrs)</Label>
+                                <Input id="wc-cap" type="number" value={wcForm.capacity_per_day} onChange={e => setWcForm({ ...wcForm, capacity_per_day: Number(e.target.value) })} className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="wc-cost" className="text-right">Cost/Hr</Label>
+                                <Input id="wc-cost" type="number" value={wcForm.cost_per_hour} onChange={e => setWcForm({ ...wcForm, cost_per_hour: Number(e.target.value) })} className="col-span-3" />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleCreateWorkCenter} disabled={createWorkCenter.isPending}>Save Work Center</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Create Operation Dialog */}
+                <Dialog open={isOpCreateOpen} onOpenChange={setIsOpCreateOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add Standard Operation</DialogTitle>
+                            <DialogDescription>Define a standard manufacturing step.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="op-code" className="text-right">Code</Label>
+                                <Input id="op-code" value={opForm.code} onChange={e => setOpForm({ ...opForm, code: e.target.value })} className="col-span-3" placeholder="e.g. OP-CUT" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="op-name" className="text-right">Name</Label>
+                                <Input id="op-name" value={opForm.name} onChange={e => setOpForm({ ...opForm, name: e.target.value })} className="col-span-3" placeholder="e.g. Fabric Cutting" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="op-time" className="text-right">Time (Min)</Label>
+                                <Input id="op-time" type="number" value={opForm.standard_time_minutes} onChange={e => setOpForm({ ...opForm, standard_time_minutes: Number(e.target.value) })} className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="op-wc" className="text-right">Work Center</Label>
+                                <Select onValueChange={val => setOpForm({ ...opForm, work_center_id: val })} value={opForm.work_center_id}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select default" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {workCenters?.map(wc => (
+                                            <SelectItem key={wc.id} value={wc.id}>{wc.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleCreateOperation} disabled={createOperation.isPending}>Save Operation</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

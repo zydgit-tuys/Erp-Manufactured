@@ -53,17 +53,33 @@ export const useCreateBOM = () => {
     const { companyId, userId } = useApp();
 
     return useMutation({
-        mutationFn: async (bom: Omit<Partial<BOMHeader>, 'company_id'>) => {
+        mutationFn: async (payload: { header: Omit<Partial<BOMHeader>, 'company_id'>, lines: any[] }) => {
             if (!companyId) throw new Error('Company ID not found');
 
-            const { data, error } = await supabase
+            // 1. Create Header
+            const { data: bom, error: bomError } = await supabase
                 .from('bom_headers')
-                .insert({ ...bom, company_id: companyId, created_by: userId })
+                .insert({ ...payload.header, company_id: companyId, created_by: userId })
                 .select()
                 .single();
 
-            if (error) throw error;
-            return data;
+            if (bomError) throw bomError;
+
+            // 2. Create Lines
+            if (payload.lines && payload.lines.length > 0) {
+                const linesToInsert = payload.lines.map((line: any) => ({
+                    bom_id: bom.id,
+                    ...line
+                }));
+
+                const { error: linesError } = await supabase
+                    .from('bom_lines')
+                    .insert(linesToInsert);
+
+                if (linesError) throw linesError;
+            }
+
+            return bom;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['boms'] });
@@ -147,5 +163,138 @@ export const useOperations = (companyId: string) => {
         },
         enabled: !!companyId,
         retry: false
+    });
+};
+
+export const useCreateWorkCenter = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { companyId, userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (payload: any) => {
+            const { error } = await supabase
+                .from('work_centers')
+                .insert({
+                    company_id: companyId,
+                    created_by: userId,
+                    ...payload,
+                    is_active: true
+                });
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['work_centers'] });
+            toast({ title: "Work Center Created", description: "New work center added." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useUpdateWorkCenter = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async ({ id, ...payload }: any) => {
+            const { error } = await supabase
+                .from('work_centers')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['work_centers'] });
+            toast({ title: "Work Center Updated", description: "Changes saved." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useCreateOperation = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { companyId, userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (payload: any) => {
+            const { error } = await supabase
+                .from('production_operations')
+                .insert({
+                    company_id: companyId,
+                    created_by: userId,
+                    ...payload,
+                    is_active: true
+                });
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['operations'] });
+            toast({ title: "Operation Created", description: "New operation added." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useUpdateOperation = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async ({ id, ...payload }: any) => {
+            const { error } = await supabase
+                .from('production_operations')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['operations'] });
+            toast({ title: "Operation Updated", description: "Changes saved." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useCreateProductionOrder = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { companyId, userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (payload: any) => {
+            const { data, error } = await supabase
+                .from('production_orders')
+                .insert({
+                    company_id: companyId,
+                    created_by: userId,
+                    status: 'planned',
+                    ...payload
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['production_orders'] });
+            toast({ title: "Work Order Created", description: "Production order has been planned." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
     });
 };

@@ -151,4 +151,4 @@ supabase/functions/*/deno.lock
 supabase/functions/*/.env
 
 # Knowledge Base (Optional - if you want to keep it local)
-master_knowledge/
+# Smaster_knowledge/

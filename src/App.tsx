@@ -36,6 +36,7 @@ import {
 // Manufacturing pages
 // Production pages
 import BOMs from "./pages/production/BOMs";
+import CreateBOM from "./pages/production/CreateBOM";
 import WorkOrders from "./pages/production/WorkOrders";
 import Operations from "./pages/production/Operations";
 
@@ -102,6 +103,7 @@ const App = () => (
 
                 {/* Manufacturing Routes */}
                 <Route path="/production/boms" element={<ProtectedRoute><BOMs /></ProtectedRoute>} />
+                <Route path="/production/boms/create" element={<ProtectedRoute><CreateBOM /></ProtectedRoute>} />
                 <Route path="/production/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
                 <Route path="/production/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
 

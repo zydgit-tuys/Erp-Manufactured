@@ -66,7 +66,7 @@ export default function POS() {
                 variantId: variant.id,
                 name: `${variant.productName} (${variant.sku})`,
                 sku: variant.sku,
-                price: variant.price,
+                price: variant.price || 0,
                 qty: 1
             }];
         });
@@ -168,7 +168,7 @@ export default function POS() {
                                         <div className="font-semibold truncate">{variant.productName}</div>
                                         <div className="text-xs text-muted-foreground mb-2">{variant.sku}</div>
                                         <div className="font-mono font-bold text-primary">
-                                            Rp {variant.price.toLocaleString('id-ID')}
+                                            Rp {(variant.price || 0).toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                 </button>
@@ -204,7 +204,7 @@ export default function POS() {
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium truncate">{item.name}</div>
                                         <div className="text-sm font-mono text-muted-foreground">
-                                            {item.qty} x Rp {item.price.toLocaleString('id-ID')}
+                                            {item.qty} x Rp {(item.price || 0).toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">
@@ -217,7 +217,7 @@ export default function POS() {
                                         </Button>
                                     </div>
                                     <div className="font-mono font-bold w-20 text-right">
-                                        {(item.price * item.qty).toLocaleString('id-ID')}
+                                        {((item.price || 0) * item.qty).toLocaleString('id-ID')}
                                     </div>
                                 </div>
                             ))}

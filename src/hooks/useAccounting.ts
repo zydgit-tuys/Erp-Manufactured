@@ -90,6 +90,39 @@ export const useCreateAccountingPeriod = () => {
     });
 };
 
+export const useUpdateAccountingPeriod = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<AccountingPeriod> }) => {
+            const { data, error } = await supabase
+                .from('accounting_periods')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['accounting-periods'] });
+            toast({
+                title: 'Period Updated',
+                description: 'Accounting period has been updated.',
+            });
+        },
+        onError: (error) => {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: `Failed to update period: ${error.message}`,
+            });
+        },
+    });
+};
+
 export const useChartOfAccounts = (companyId: string) => {
     return useQuery({
         queryKey: ['chart-of-accounts', companyId],

@@ -39,7 +39,7 @@ export default function BOMs() {
                             Manage product recipes and production formulas
                         </p>
                     </div>
-                    <Button onClick={() => setIsCreateOpen(true)}>
+                    <Button onClick={() => window.location.href = '/production/boms/create'}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create BOM
                     </Button>
@@ -64,7 +64,7 @@ export default function BOMs() {
                                 title="No BOMs Found"
                                 description="Get started by creating your first Bill of Materials to define how your products are made."
                                 action={
-                                    <Button onClick={() => setIsCreateOpen(true)}>
+                                    <Button onClick={() => window.location.href = '/production/boms/create'}>
                                         <Plus className="mr-2 h-4 w-4" />
                                         Create First BOM
                                     </Button>
