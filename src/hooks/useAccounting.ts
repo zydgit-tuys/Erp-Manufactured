@@ -11,6 +11,7 @@ export interface AccountingPeriod {
     period_code: string;
     start_date: string;
     end_date: string;
+    fiscal_year: number;
     status: 'open' | 'closed' | 'locked';
     closed_at?: string;
     closed_by?: string;

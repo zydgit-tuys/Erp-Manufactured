@@ -185,7 +185,7 @@ export const useSubmitPOSOrder = () => {
                 .eq('company_id', companyId)
                 .lte('start_date', orderData.sale_date)
                 .gte('end_date', orderData.sale_date)
-                .eq('is_closed', false)
+                .eq('status', 'open')
                 .single();
 
             if (periodError || !period) {

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
     Search, ShoppingCart, CreditCard, Banknote, QrCode,
-    Trash, Plus, Minus, RefreshCw, Loader2, ArrowLeft, ShoppingBag
+    Trash, Plus, Minus, RefreshCw, Loader2, ArrowLeft, ShoppingBag, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubmitPOSOrder } from '@/hooks/useSales';
@@ -23,9 +23,31 @@ export default function POS() {
     const { companyId, warehouseId } = useApp();
     const { toast } = useToast();
 
+
     // Data Loading
     const { data: products, isLoading } = useProducts(companyId);
     const { mutate: submitOrder, isPending } = useSubmitPOSOrder();
+
+    if (!warehouseId) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-muted/20">
+                <div className="text-center space-y-4">
+                    <div className="bg-background param p-6 rounded-lg shadow-lg max-w-md mx-auto">
+                        <div className="bg-amber-100 text-amber-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-xl font-bold">No Warehouse Selected</h2>
+                        <p className="text-muted-foreground">
+                            You must configure a warehouse in Settings before making sales.
+                        </p>
+                        <Button onClick={() => navigate('/settings')} className="w-full">
+                            Go to Settings
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // State
     const [searchQuery, setSearchQuery] = useState('');

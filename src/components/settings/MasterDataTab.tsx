@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSizes, useColors, useCategories, useCreateSize, useCreateColor, useCreateCategory, useDeleteSize, useDeleteColor, useDeleteCategory } from '@/hooks/useMasterData';
+import { useSizes, useColors, useCategories, useWarehouses, useCreateSize, useCreateColor, useCreateCategory, useCreateWarehouse, useDeleteSize, useDeleteColor, useDeleteCategory, useDeleteWarehouse, useUpdateWarehouse, useCreateBin } from '@/hooks/useMasterData';
 import { useApp } from '@/contexts/AppContext';
 import { Trash2, Plus, GripVertical } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,14 +19,15 @@ export function MasterDataTab() {
         <Card className="shadow-card">
             <CardHeader>
                 <CardTitle>Master Data Management</CardTitle>
-                <CardDescription>Manage product attributes like Sizes, Colors, and Categories</CardDescription>
+                <CardDescription>Manage product attributes and warehouses</CardDescription>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="sizes">
                     <TabsList className="mb-4">
-                        <TabsTrigger value="sizes">Sizes (S, M, L)</TabsTrigger>
-                        <TabsTrigger value="colors">Colors (Red, Blue)</TabsTrigger>
+                        <TabsTrigger value="sizes">Sizes</TabsTrigger>
+                        <TabsTrigger value="colors">Colors</TabsTrigger>
                         <TabsTrigger value="categories">Categories</TabsTrigger>
+                        <TabsTrigger value="warehouses">Warehouses</TabsTrigger>
                     </TabsList>
                     <TabsContent value="sizes">
                         <SizeManager companyId={companyId} />
@@ -35,6 +37,9 @@ export function MasterDataTab() {
                     </TabsContent>
                     <TabsContent value="categories">
                         <CategoryManager companyId={companyId} />
+                    </TabsContent>
+                    <TabsContent value="warehouses">
+                        <WarehouseManager companyId={companyId} />
                     </TabsContent>
                 </Tabs>
             </CardContent>
@@ -228,6 +233,141 @@ function CategoryManager({ companyId }: { companyId: string }) {
                     )}
                 </TableBody>
             </Table>
+        </div>
+    );
+}
+
+function WarehouseManager({ companyId }: { companyId: string }) {
+    const { data: warehouses } = useWarehouses(companyId);
+    const createWarehouse = useCreateWarehouse();
+    const deleteWarehouse = useDeleteWarehouse();
+    const [newWarehouse, setNewWarehouse] = useState<{
+        name: string;
+        code: string;
+        address: string;
+        city: string;
+    }>({
+        name: '',
+        code: '',
+        address: '',
+        city: ''
+    });
+
+    const handleAdd = () => {
+        if (!newWarehouse.name || !newWarehouse.code) return;
+        createWarehouse.mutate(newWarehouse);
+        setNewWarehouse({ name: '', code: '', address: '', city: '' });
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label>Warehouse Name *</Label>
+                    <Input placeholder="e.g. Main Warehouse" value={newWarehouse.name} onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Code *</Label>
+                    <Input placeholder="e.g. WH-001" value={newWarehouse.code} onChange={e => setNewWarehouse({ ...newWarehouse, code: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input placeholder="Jl. Sudirman No. 1" value={newWarehouse.address} onChange={e => setNewWarehouse({ ...newWarehouse, address: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <Label>City</Label>
+                    <Input placeholder="Jakarta" value={newWarehouse.city} onChange={e => setNewWarehouse({ ...newWarehouse, city: e.target.value })} />
+                </div>
+                <Button onClick={handleAdd} disabled={createWarehouse.isPending} className="col-span-2">
+                    <Plus className="mr-2 h-4 w-4" /> Add Warehouse
+                </Button>
+            </div>
+
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>City</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {warehouses?.map((wh: any) => (
+                        <TableRow key={wh.id} className={!wh.is_active ? "opacity-50 bg-muted/50" : ""}>
+                            <TableCell className="font-mono">{wh.code}</TableCell>
+                            <TableCell className="font-medium">
+                                <div>{wh.name}</div>
+                                <div className="text-xs text-muted-foreground">{wh.address}</div>
+                            </TableCell>
+                            <TableCell>{wh.city}</TableCell>
+                            <TableCell>
+                                <WarehouseStatusToggle warehouse={wh} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                    <InitBinButton warehouseId={wh.id} />
+                                    <Button variant="ghost" size="icon" onClick={() => deleteWarehouse.mutate(wh.id)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    {!warehouses?.length && (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">No warehouses defined. Add one above.</TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function InitBinButton({ warehouseId }: { warehouseId: string }) {
+    const createBin = useCreateBin();
+
+    // We strictly want to fix "No bin" error, so we just blindly insert 'GEN' if it's missing.
+    // The previous manual deletion/recreation wasn't possible for user.
+    const handleFix = () => {
+        createBin.mutate({
+            warehouse_id: warehouseId,
+            code: 'GEN',
+            name: 'General',
+            is_active: true
+        });
+    };
+
+    return (
+        <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs"
+            onClick={handleFix}
+            disabled={createBin.isPending}
+        >
+            <Plus className="mr-1 h-3 w-3" /> Fix Bin
+        </Button>
+    )
+}
+
+function WarehouseStatusToggle({ warehouse }: { warehouse: any }) {
+    const updateWarehouse = useUpdateWarehouse();
+
+    return (
+        <div className="flex items-center space-x-2">
+            <Switch
+                checked={warehouse.is_active}
+                onCheckedChange={(checked) =>
+                    updateWarehouse.mutate({ id: warehouse.id, is_active: checked })
+                }
+                disabled={updateWarehouse.isPending}
+            />
+            <span className="text-xs text-muted-foreground">
+                {warehouse.is_active ? 'Active' : 'Inactive'}
+            </span>
         </div>
     );
 }
