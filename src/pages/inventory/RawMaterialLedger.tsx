@@ -13,102 +13,42 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, 
-  Search, 
-  Package, 
-  ArrowDownToLine, 
+import {
+  ArrowDownToLine,
   ArrowUpFromLine,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle
+  AlertTriangle,
+  Package,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-
-// Sample data for demo
-const sampleLedger = [
-  { 
-    id: '1', 
-    date: '2025-01-15', 
-    materialCode: 'MAT-001', 
-    materialName: 'Kain Katun 30s',
-    type: 'RECEIPT',
-    reference: 'PO-2025-001',
-    qtyIn: 500,
-    qtyOut: 0,
-    unitCost: 25000,
-    balance: 500,
-    totalCost: 12500000
-  },
-  { 
-    id: '2', 
-    date: '2025-01-16', 
-    materialCode: 'MAT-001', 
-    materialName: 'Kain Katun 30s',
-    type: 'ISSUE',
-    reference: 'WO-2025-001',
-    qtyIn: 0,
-    qtyOut: 100,
-    unitCost: 25000,
-    balance: 400,
-    totalCost: 10000000
-  },
-  { 
-    id: '3', 
-    date: '2025-01-17', 
-    materialCode: 'MAT-002', 
-    materialName: 'Benang Polyester',
-    type: 'RECEIPT',
-    reference: 'PO-2025-002',
-    qtyIn: 200,
-    qtyOut: 0,
-    unitCost: 15000,
-    balance: 200,
-    totalCost: 3000000
-  },
-];
-
-const sampleBalances = [
-  { 
-    id: '1', 
-    code: 'MAT-001', 
-    name: 'Kain Katun 30s', 
-    unit: 'meter',
-    qty: 400, 
-    cost: 10000000,
-    avgCost: 25000,
-    minStock: 100,
-    status: 'ok'
-  },
-  { 
-    id: '2', 
-    code: 'MAT-002', 
-    name: 'Benang Polyester', 
-    unit: 'roll',
-    qty: 200, 
-    cost: 3000000,
-    avgCost: 15000,
-    minStock: 50,
-    status: 'ok'
-  },
-  { 
-    id: '3', 
-    code: 'MAT-003', 
-    name: 'Kancing Plastik', 
-    unit: 'pcs',
-    qty: 80, 
-    cost: 400000,
-    avgCost: 5000,
-    minStock: 500,
-    status: 'low'
-  },
-];
+import { useApp } from '@/contexts/AppContext';
+import { useRawMaterialBalances, useRawMaterialLedger } from '@/hooks/useInventory';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function RawMaterialLedger() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('balances');
   const navigate = useNavigate();
+  const { companyId } = useApp();
+
+  // Fetch balances
+  const {
+    data: balances,
+    isLoading: isLoadingBalances,
+    error: errorBalances,
+    refetch: refetchBalances
+  } = useRawMaterialBalances(companyId);
+
+  // Fetch ledger
+  const {
+    data: ledger,
+    isLoading: isLoadingLedger,
+    error: errorLedger,
+    refetch: refetchLedger
+  } = useRawMaterialLedger(companyId);
 
   const getTransactionBadge = (type: string) => {
     switch (type) {
@@ -125,19 +65,45 @@ export default function RawMaterialLedger() {
     }
   };
 
-  const getStockStatus = (status: string) => {
-    switch (status) {
-      case 'low':
-        return <Badge variant="destructive">Low Stock</Badge>;
-      case 'ok':
-        return <Badge className="bg-success/10 text-success border-success/20">OK</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  const getStockStatus = (reorderLevel: number, currentStock: number) => {
+    if (currentStock <= reorderLevel) {
+      return <Badge variant="destructive">Low Stock</Badge>;
     }
+    return <Badge className="bg-success/10 text-success border-success/20">OK</Badge>;
   };
 
-  const totalValue = sampleBalances.reduce((sum, b) => sum + b.cost, 0);
-  const lowStockCount = sampleBalances.filter(b => b.status === 'low').length;
+  // Filter balances
+  const filteredBalances = (balances || []).filter(
+    (item: any) =>
+      item.material_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.material_code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter ledger
+  const filteredLedger = (ledger || []).filter(
+    (entry: any) =>
+      entry.material?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.material?.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats
+  const totalValue = (balances || []).reduce((sum: number, b: any) => sum + (b.total_value || 0), 0);
+  const lowStockCount = (balances || []).filter((b: any) => (b.current_stock || 0) <= (b.reorder_level || 0)).length;
+
+  if (errorBalances || errorLedger) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load inventory data"
+          message={errorBalances?.message || errorLedger?.message || "Unknown error"}
+          onRetry={() => {
+            refetchBalances();
+            refetchLedger();
+          }}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -170,7 +136,7 @@ export default function RawMaterialLedger() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleBalances.length}</div>
+              <div className="text-2xl font-bold">{balances?.length || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -203,7 +169,12 @@ export default function RawMaterialLedger() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleLedger.length}</div>
+              <div className="text-2xl font-bold">
+                {ledger?.filter((l: any) => {
+                  const today = new Date().toISOString().split('T')[0];
+                  return l.journal_date?.startsWith(today);
+                }).length || 0}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -231,32 +202,42 @@ export default function RawMaterialLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Material</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead className="text-right">Avg Cost</TableHead>
-                      <TableHead className="text-right">Total Value</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sampleBalances.map((balance) => (
-                      <TableRow key={balance.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell className="font-mono text-sm">{balance.code}</TableCell>
-                        <TableCell className="font-medium">{balance.name}</TableCell>
-                        <TableCell className="text-right font-mono">{balance.qty.toLocaleString()}</TableCell>
-                        <TableCell>{balance.unit}</TableCell>
-                        <TableCell className="text-right">Rp {balance.avgCost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-right font-medium">Rp {balance.cost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-center">{getStockStatus(balance.status)}</TableCell>
+                {isLoadingBalances ? (
+                  <TableSkeleton rows={5} columns={7} />
+                ) : filteredBalances.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No materials found"
+                    description="No raw materials match your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead>Unit</TableHead>
+                        <TableHead className="text-right">Avg Cost</TableHead>
+                        <TableHead className="text-right">Total Value</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBalances.map((balance: any) => (
+                        <TableRow key={balance.material_id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell className="font-mono text-sm">{balance.material_code}</TableCell>
+                          <TableCell className="font-medium">{balance.material_name}</TableCell>
+                          <TableCell className="text-right font-mono">{(balance.current_stock || 0).toLocaleString()}</TableCell>
+                          <TableCell>{balance.uom}</TableCell>
+                          <TableCell className="text-right">Rp {(balance.weighted_average_cost || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-right font-medium">Rp {(balance.total_value || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-center">{getStockStatus(balance.reorder_level || 0, balance.current_stock || 0)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -277,45 +258,55 @@ export default function RawMaterialLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Material</TableHead>
-                      <TableHead className="text-center">Type</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead className="text-right">In</TableHead>
-                      <TableHead className="text-right">Out</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                      <TableHead className="text-right">Unit Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sampleLedger.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-mono text-sm">
-                          {format(new Date(entry.date), 'dd MMM yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{entry.materialName}</div>
-                            <div className="text-xs text-muted-foreground">{entry.materialCode}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{getTransactionBadge(entry.type)}</TableCell>
-                        <TableCell className="font-mono text-sm">{entry.reference}</TableCell>
-                        <TableCell className="text-right font-mono text-success">
-                          {entry.qtyIn > 0 ? `+${entry.qtyIn}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-destructive">
-                          {entry.qtyOut > 0 ? `-${entry.qtyOut}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">{entry.balance}</TableCell>
-                        <TableCell className="text-right">Rp {entry.unitCost.toLocaleString('id-ID')}</TableCell>
+                {isLoadingLedger ? (
+                  <TableSkeleton rows={5} columns={8} />
+                ) : filteredLedger.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No transactions found"
+                    description="No ledger entries match your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead className="text-center">Type</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead className="text-right">In</TableHead>
+                        <TableHead className="text-right">Out</TableHead>
+                        <TableHead className="text-right">Balance</TableHead>
+                        <TableHead className="text-right">Unit Cost</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLedger.map((entry: any) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-mono text-sm">
+                            {format(new Date(entry.journal_date), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{entry.material?.name}</div>
+                              <div className="text-xs text-muted-foreground">{entry.material?.code}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getTransactionBadge(entry.transaction_type)}</TableCell>
+                          <TableCell className="font-mono text-sm">{entry.reference_id}</TableCell>
+                          <TableCell className="text-right font-mono text-success">
+                            {entry.qty_in > 0 ? `+${entry.qty_in}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-destructive">
+                            {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium">{entry.balance_after}</TableCell>
+                          <TableCell className="text-right">Rp {(entry.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

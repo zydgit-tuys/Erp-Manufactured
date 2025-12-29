@@ -12,15 +12,17 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Layers, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Layers, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMaterials } from '@/hooks/useMaterials';
-import { Loader2 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function Materials() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const { data: materials, isLoading } = useMaterials();
+  const { data: materials, isLoading, error, refetch } = useMaterials();
 
   const filteredMaterials = (materials || []).filter(
     (material) =>
@@ -28,12 +30,14 @@ export default function Materials() {
       material.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
+  if (error) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+        <ErrorState
+          title="Failed to load materials"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
       </AppLayout>
     );
   }

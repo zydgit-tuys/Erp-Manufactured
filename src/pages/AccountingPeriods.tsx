@@ -20,15 +20,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Calendar, Lock, Unlock, Plus, AlertTriangle } from 'lucide-react';
+import { Calendar, Lock, Unlock, Plus, AlertTriangle, Archive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-import { useAccountingPeriods } from '@/hooks/useAccountingPeriods';
-import { Loader2 } from 'lucide-react';
-import { AccountingPeriod } from '@/types/accountingPeriod';
+import { useAccountingPeriods } from '@/hooks/useAccounting';
+import { useApp } from '@/contexts/AppContext';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
+import { format } from 'date-fns';
 
 export default function AccountingPeriods() {
-  const { data: periods, isLoading } = useAccountingPeriods();
+  const { companyId } = useApp();
+  const { data: periods, isLoading, error, refetch } = useAccountingPeriods(companyId);
   const [closingPeriodId, setClosingPeriodId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -37,10 +40,6 @@ export default function AccountingPeriods() {
     toast({
       title: 'Not Implemented',
       description: 'Backend integration for closing period is pending.',
-    });
-    toast({
-      title: 'Period Closed',
-      description: 'The accounting period has been closed. No more transactions can be posted.',
     });
   };
 
@@ -52,21 +51,18 @@ export default function AccountingPeriods() {
     });
   };
 
-
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    return format(new Date(dateStr), 'dd MMM yyyy');
   };
 
-  if (isLoading) {
+  if (error) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+        <ErrorState
+          title="Failed to load accounting periods"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
       </AppLayout>
     );
   }
@@ -134,76 +130,92 @@ export default function AccountingPeriods() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Period Code</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead>Closed At</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {periodList.map((period) => (
-                  <TableRow key={period.id}>
-                    <TableCell className="font-mono font-medium">
-                      {period.period_code}
-                    </TableCell>
-                    <TableCell>{formatDate(period.start_date)}</TableCell>
-                    <TableCell>{formatDate(period.end_date)}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant={period.status === 'open' ? 'default' : 'secondary'}
-                        className={period.status === 'open' ? 'bg-success hover:bg-success/80' : ''}
-                      >
-                        {period.status === 'open' ? (
-                          <><Unlock className="h-3 w-3 mr-1" /> Open</>
-                        ) : (
-                          <><Lock className="h-3 w-3 mr-1" /> Closed</>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {period.closed_at ? formatDate(period.closed_at) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {period.status === 'open' && (
-                        <Dialog open={closingPeriodId === period.id} onOpenChange={(open) => setClosingPeriodId(open ? period.id : null)}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Lock className="h-4 w-4 mr-1" />
-                              Close Period
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5 text-warning" />
-                                Close Accounting Period
-                              </DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to close period <strong>{period.period_code}</strong>?
-                                This action cannot be undone. No more transactions can be posted to this period after closing.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => setClosingPeriodId(null)}>
-                                Cancel
-                              </Button>
-                              <Button variant="destructive" onClick={() => handleClosePeriod(period.id)}>
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={6} />
+            ) : periodList.length === 0 ? (
+              <EmptyState
+                icon={Calendar}
+                title="No Accounting Periods"
+                description="Create your first accounting period to start recording transactions."
+                action={
+                  <Button onClick={handleCreateNextPeriod}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Period
+                  </Button>
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Period Code</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Closed At</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {periodList.map((period) => (
+                    <TableRow key={period.id}>
+                      <TableCell className="font-mono font-medium">
+                        {period.period_code}
+                      </TableCell>
+                      <TableCell>{formatDate(period.start_date)}</TableCell>
+                      <TableCell>{formatDate(period.end_date)}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge
+                          variant={period.status === 'open' ? 'default' : 'secondary'}
+                          className={period.status === 'open' ? 'bg-success hover:bg-success/80' : ''}
+                        >
+                          {period.status === 'open' ? (
+                            <><Unlock className="h-3 w-3 mr-1" /> Open</>
+                          ) : (
+                            <><Lock className="h-3 w-3 mr-1" /> Closed</>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {period.closed_at ? formatDate(period.closed_at) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {period.status === 'open' && (
+                          <Dialog open={closingPeriodId === period.id} onOpenChange={(open) => setClosingPeriodId(open ? period.id : null)}>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Lock className="h-4 w-4 mr-1" />
                                 Close Period
                               </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <AlertTriangle className="h-5 w-5 text-warning" />
+                                  Close Accounting Period
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to close period <strong>{period.period_code}</strong>?
+                                  This action cannot be undone. No more transactions can be posted to this period after closing.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => setClosingPeriodId(null)}>
+                                  Cancel
+                                </Button>
+                                <Button variant="destructive" onClick={() => handleClosePeriod(period.id)}>
+                                  Close Period
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

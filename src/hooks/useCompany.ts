@@ -39,3 +39,24 @@ export const useUpdateCompanySettings = () => {
         },
     });
 };
+
+export const useUpdateCompanyProfile = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string, updates: Partial<Company> }) => {
+            const { data, error } = await supabase
+                .from('companies')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['company'] });
+        },
+    });
+};

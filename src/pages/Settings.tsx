@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,44 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany, useUpdateCompanySettings } from '@/hooks/useCompany';
+import { useCompany, useUpdateCompanySettings, useUpdateCompanyProfile } from '@/hooks/useCompany';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, User, Shield, Layers, Loader2, Factory, Store } from 'lucide-react';
+import { Building2, User, Shield, Layers, Loader2, Factory } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { MasterDataTab } from '@/components/settings/MasterDataTab';
 
 export default function Settings() {
   const { user } = useAuth();
   const { data: company, isLoading } = useCompany();
   const updateSettings = useUpdateCompanySettings();
+  const updateProfile = useUpdateCompanyProfile();
   const { toast } = useToast();
+
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Local state for company profile form
+  const [companyName, setCompanyName] = useState('');
+  const [companyIndustry, setCompanyIndustry] = useState('');
+
+  // Sync local state with fetched data
+  useEffect(() => {
+    if (company) {
+      setCompanyName(company.name);
+      setCompanyIndustry(company.industry || '');
+    }
+  }, [company]);
 
   const handleModuleToggle = async (module: 'marketplace' | 'finance' | 'analytics' | 'manufacturing', enabled: boolean) => {
     if (!company) return;
@@ -37,12 +66,79 @@ export default function Settings() {
         title: 'Settings Updated',
         description: `Module ${module} has been ${enabled ? 'enabled' : 'disabled'}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to update settings:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error updating settings',
+        description: error.message || 'Failed to update settings.',
+      });
+    }
+  };
+
+  const handleProfileSave = async () => {
+    if (!company) return;
+
+    try {
+      await updateProfile.mutateAsync({
+        id: company.id,
+        updates: {
+          name: companyName,
+          industry: companyIndustry
+        }
+      });
+      toast({
+        title: 'Profile Updated',
+        description: 'Company information has been saved.',
+      });
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to update settings.',
+        description: error.message || 'Failed to update company profile.',
       });
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Passwords do not match.',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Password must be at least 6 characters.',
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Password updated successfully.',
+      });
+      setIsPasswordOpen(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update password.',
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -87,11 +183,10 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Company Code</Label>
-                <Input value={company?.code || 'N/A'} disabled className="font-mono" />
-              </div>
-              <div className="space-y-2">
-                <Label>Industry</Label>
-                <Input value={company?.industry || 'Manufacturing'} disabled />
+                <Input value={company?.code || 'N/A'} disabled className="font-mono bg-muted" />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  Unique identifier (cannot be changed)
+                </p>
               </div>
               <Separator />
               <p className="text-sm text-muted-foreground">
@@ -198,11 +293,53 @@ export default function Settings() {
                 <Input value={user?.id || ''} disabled className="font-mono text-xs" />
               </div>
               <Separator />
-              <Button variant="outline" className="w-full">
-                Change Password
-              </Button>
+
+              <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    Change Password
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogDescription>
+                      Enter your new password below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>New Password</Label>
+                      <Input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Confirm Password</Label>
+                      <Input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPasswordOpen(false)}>Cancel</Button>
+                    <Button onClick={handlePasswordChange} disabled={isChangingPassword}>
+                      {isChangingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Update Password
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
             </CardContent>
           </Card>
+
+          {/* Master Data Management */}
+          <MasterDataTab />
 
           {/* Role & Permissions (Static for now, referencing M0) */}
           <Card className="shadow-card">

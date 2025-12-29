@@ -13,116 +13,43 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Search, 
+import {
+  Search,
   Scissors,
   Factory,
   Sparkles,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Package
 } from 'lucide-react';
 import { format } from 'date-fns';
-
-// Sample data
-const sampleWipBalances = [
-  { 
-    id: '1', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-M-BLK',
-    stage: 'CUT',
-    qty: 50, 
-    cost: 1250000,
-    avgCost: 25000,
-    daysInStage: 2
-  },
-  { 
-    id: '2', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-L-WHT',
-    stage: 'SEW',
-    qty: 30, 
-    cost: 1050000,
-    avgCost: 35000,
-    daysInStage: 1
-  },
-  { 
-    id: '3', 
-    productCode: 'TS-002', 
-    productName: 'Kaos Raglan Sport',
-    sku: 'TS-002-M-RED',
-    stage: 'FINISH',
-    qty: 25, 
-    cost: 1125000,
-    avgCost: 45000,
-    daysInStage: 0
-  },
-  { 
-    id: '4', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-S-BLU',
-    stage: 'CUT',
-    qty: 40, 
-    cost: 1000000,
-    avgCost: 25000,
-    daysInStage: 5
-  },
-];
-
-const sampleLedger = [
-  { 
-    id: '1', 
-    date: '2025-01-17', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-M-BLK',
-    stage: 'CUT',
-    type: 'PRODUCTION_IN',
-    reference: 'WO-2025-001',
-    qtyIn: 50,
-    qtyOut: 0,
-    materialCost: 25000,
-    laborCost: 0,
-    overheadCost: 0
-  },
-  { 
-    id: '2', 
-    date: '2025-01-17', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-L-WHT',
-    stage: 'CUT',
-    type: 'PRODUCTION_OUT',
-    reference: 'WO-2025-001',
-    qtyIn: 0,
-    qtyOut: 30,
-    materialCost: 25000,
-    laborCost: 5000,
-    overheadCost: 5000
-  },
-  { 
-    id: '3', 
-    date: '2025-01-17', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-L-WHT',
-    stage: 'SEW',
-    type: 'PRODUCTION_IN',
-    reference: 'WO-2025-001',
-    qtyIn: 30,
-    qtyOut: 0,
-    materialCost: 25000,
-    laborCost: 5000,
-    overheadCost: 5000
-  },
-];
+import { useApp } from '@/contexts/AppContext';
+import { useWipBalances, useWipLedger } from '@/hooks/useInventory';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function WipLedger() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('balances');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const { companyId } = useApp();
+
+  // Fetch balances
+  const {
+    data: balances,
+    isLoading: isLoadingBalances,
+    error: errorBalances,
+    refetch: refetchBalances
+  } = useWipBalances(companyId);
+
+  // Fetch ledger
+  const {
+    data: ledger,
+    isLoading: isLoadingLedger,
+    error: errorLedger,
+    refetch: refetchLedger
+  } = useWipLedger(companyId);
 
   const getStageBadge = (stage: string) => {
     switch (stage) {
@@ -148,15 +75,48 @@ export default function WipLedger() {
     }
   };
 
-  const filteredBalances = stageFilter === 'all' 
-    ? sampleWipBalances 
-    : sampleWipBalances.filter(b => b.stage === stageFilter);
+  // Filter balances
+  const filteredBalances = (balances || []).filter((b: any) => {
+    const matchesSearch =
+      b.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.product_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.sku?.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const cutQty = sampleWipBalances.filter(b => b.stage === 'CUT').reduce((sum, b) => sum + b.qty, 0);
-  const sewQty = sampleWipBalances.filter(b => b.stage === 'SEW').reduce((sum, b) => sum + b.qty, 0);
-  const finishQty = sampleWipBalances.filter(b => b.stage === 'FINISH').reduce((sum, b) => sum + b.qty, 0);
-  const totalValue = sampleWipBalances.reduce((sum, b) => sum + b.cost, 0);
-  const hangingWip = sampleWipBalances.filter(b => b.daysInStage > 3).length;
+    const matchesStage = stageFilter === 'all' || b.stage === stageFilter;
+
+    return matchesSearch && matchesStage;
+  });
+
+  // Filter ledger
+  const filteredLedger = (ledger || []).filter((entry: any) =>
+    entry.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.product?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats calculation
+  const cutQty = (balances || []).filter((b: any) => b.stage === 'CUT').reduce((sum: number, b: any) => sum + (b.quantity || 0), 0);
+  const sewQty = (balances || []).filter((b: any) => b.stage === 'SEW').reduce((sum: number, b: any) => sum + (b.quantity || 0), 0);
+  const finishQty = (balances || []).filter((b: any) => b.stage === 'FINISH').reduce((sum: number, b: any) => sum + (b.quantity || 0), 0);
+  const totalValue = (balances || []).reduce((sum: number, b: any) => sum + (b.total_value || 0), 0);
+
+  // Mock days in stage logic since it might not be in the view yet, defaulting to 0 if not present
+  const hangingWip = (balances || []).filter((b: any) => (b.days_in_stage || 0) > 3).length;
+
+  if (errorBalances || errorLedger) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load WIP data"
+          message={errorBalances?.message || errorLedger?.message || "Unknown error"}
+          onRetry={() => {
+            refetchBalances();
+            refetchLedger();
+          }}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -249,29 +209,29 @@ export default function WipLedger() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant={stageFilter === 'all' ? 'default' : 'outline'} 
+                    <Button
+                      variant={stageFilter === 'all' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setStageFilter('all')}
                     >
                       All
                     </Button>
-                    <Button 
-                      variant={stageFilter === 'CUT' ? 'default' : 'outline'} 
+                    <Button
+                      variant={stageFilter === 'CUT' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setStageFilter('CUT')}
                     >
                       <Scissors className="h-3 w-3 mr-1" /> Cut
                     </Button>
-                    <Button 
-                      variant={stageFilter === 'SEW' ? 'default' : 'outline'} 
+                    <Button
+                      variant={stageFilter === 'SEW' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setStageFilter('SEW')}
                     >
                       <Factory className="h-3 w-3 mr-1" /> Sew
                     </Button>
-                    <Button 
-                      variant={stageFilter === 'FINISH' ? 'default' : 'outline'} 
+                    <Button
+                      variant={stageFilter === 'FINISH' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setStageFilter('FINISH')}
                     >
@@ -281,41 +241,51 @@ export default function WipLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead className="text-center">Stage</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Avg Cost</TableHead>
-                      <TableHead className="text-right">Total Value</TableHead>
-                      <TableHead className="text-center">Days</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBalances.map((balance) => (
-                      <TableRow key={balance.id} className={balance.daysInStage > 3 ? 'bg-destructive/5' : ''}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{balance.productName}</div>
-                            <div className="text-xs text-muted-foreground">{balance.productCode}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{balance.sku}</TableCell>
-                        <TableCell className="text-center">{getStageBadge(balance.stage)}</TableCell>
-                        <TableCell className="text-right font-mono">{balance.qty}</TableCell>
-                        <TableCell className="text-right">Rp {balance.avgCost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-right font-medium">Rp {balance.cost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={balance.daysInStage > 3 ? 'destructive' : 'secondary'}>
-                            {balance.daysInStage}d
-                          </Badge>
-                        </TableCell>
+                {isLoadingBalances ? (
+                  <TableSkeleton rows={5} columns={7} />
+                ) : filteredBalances.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No WIP items found"
+                    description="There is no work in progress matching your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead className="text-center">Stage</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Avg Cost</TableHead>
+                        <TableHead className="text-right">Total Value</TableHead>
+                        <TableHead className="text-center">Days</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBalances.map((balance: any) => (
+                        <TableRow key={balance.id || `${balance.product_id}-${balance.stage}`} className={(balance.days_in_stage || 0) > 3 ? 'bg-destructive/5' : ''}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{balance.product_name}</div>
+                              <div className="text-xs text-muted-foreground">{balance.product_code}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{balance.sku}</TableCell>
+                          <TableCell className="text-center">{getStageBadge(balance.stage)}</TableCell>
+                          <TableCell className="text-right font-mono">{balance.quantity}</TableCell>
+                          <TableCell className="text-right">Rp {(balance.average_cost || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-right font-medium">Rp {(balance.total_value || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={(balance.days_in_stage || 0) > 3 ? 'destructive' : 'secondary'}>
+                              {balance.days_in_stage || 0}d
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -336,49 +306,56 @@ export default function WipLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product / SKU</TableHead>
-                      <TableHead className="text-center">Stage</TableHead>
-                      <TableHead className="text-center">Type</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead className="text-right">In</TableHead>
-                      <TableHead className="text-right">Out</TableHead>
-                      <TableHead className="text-right">Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sampleLedger.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-mono text-sm">
-                          {format(new Date(entry.date), 'dd MMM yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{entry.productName}</div>
-                            <div className="text-xs text-muted-foreground">{entry.sku}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{getStageBadge(entry.stage)}</TableCell>
-                        <TableCell className="text-center">{getTransactionBadge(entry.type)}</TableCell>
-                        <TableCell className="font-mono text-sm">{entry.reference}</TableCell>
-                        <TableCell className="text-right font-mono text-success">
-                          {entry.qtyIn > 0 ? `+${entry.qtyIn}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-destructive">
-                          {entry.qtyOut > 0 ? `-${entry.qtyOut}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right text-xs">
-                          <div>M: {entry.materialCost.toLocaleString()}</div>
-                          <div>L: {entry.laborCost.toLocaleString()}</div>
-                          <div>O: {entry.overheadCost.toLocaleString()}</div>
-                        </TableCell>
+                {isLoadingLedger ? (
+                  <TableSkeleton rows={5} columns={8} />
+                ) : filteredLedger.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No transactions found"
+                    description="No WIP transactions found matching your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Product / SKU</TableHead>
+                        <TableHead className="text-center">Stage</TableHead>
+                        <TableHead className="text-center">Type</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead className="text-right">In</TableHead>
+                        <TableHead className="text-right">Out</TableHead>
+                        <TableHead className="text-right">Cost</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLedger.map((entry: any) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-mono text-sm">
+                            {format(new Date(entry.journal_date), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{entry.product?.name}</div>
+                              <div className="text-xs text-muted-foreground">{entry.sku}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getStageBadge(entry.stage)}</TableCell>
+                          <TableCell className="text-center">{getTransactionBadge(entry.transaction_type)}</TableCell>
+                          <TableCell className="font-mono text-sm">{entry.reference_id}</TableCell>
+                          <TableCell className="text-right font-mono text-success">
+                            {entry.qty_in > 0 ? `+${entry.qty_in}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-destructive">
+                            {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right text-xs">
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

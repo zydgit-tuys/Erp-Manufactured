@@ -14,26 +14,36 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const sampleCustomers: Array<{
-  id: string;
-  code: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  creditLimit: number;
-  isActive: boolean;
-}> = [];
+import { useCustomers } from '@/hooks/useMasterData';
+import { useApp } from '@/contexts/AppContext';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { companyId } = useApp();
 
-  const filteredCustomers = sampleCustomers.filter(
+  const { data: customers, isLoading, error, refetch } = useCustomers(companyId);
+
+  const filteredCustomers = (customers || []).filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (error) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load customers"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -59,7 +69,7 @@ export default function Customers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleCustomers.length}</div>
+              <div className="text-2xl font-bold">{customers?.length || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -70,7 +80,7 @@ export default function Customers() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {sampleCustomers.filter((c) => c.isActive).length}
+                {customers?.filter((c) => c.is_active).length || 0}
               </div>
             </CardContent>
           </Card>
@@ -91,57 +101,60 @@ export default function Customers() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead className="text-right">Credit Limit</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.map((customer) => (
-                  <TableRow
-                    key={customer.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/customers/${customer.id}`)}
-                  >
-                    <TableCell className="font-mono text-sm">
-                      {customer.code}
-                    </TableCell>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.contactPerson}</TableCell>
-                    <TableCell>{customer.phone}</TableCell>
-                    <TableCell className="text-right">
-                      Rp {customer.creditLimit.toLocaleString('id-ID')}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={customer.isActive ? 'default' : 'secondary'}>
-                        {customer.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredCustomers.length === 0 && (
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={5} />
+            ) : filteredCustomers.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title={searchQuery ? "No customers found" : "No customers yet"}
+                description={
+                  searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Get started by adding your first customer"
+                }
+                action={
+                  !searchQuery && (
+                    <Button onClick={() => navigate('/customers/new')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Customer
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <Users className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No customers yet</p>
-                      <Button
-                        variant="link"
-                        onClick={() => navigate('/customers/new')}
-                        className="mt-2"
-                      >
-                        Add your first customer
-                      </Button>
-                    </TableCell>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => (
+                    <TableRow
+                      key={customer.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/customers/${customer.id}`)}
+                    >
+                      <TableCell className="font-mono text-sm">
+                        {customer.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell>{customer.contact_person}</TableCell>
+                      <TableCell>{customer.phone}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={customer.is_active ? 'default' : 'secondary'}>
+                          {customer.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

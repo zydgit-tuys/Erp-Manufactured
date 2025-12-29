@@ -13,115 +13,42 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Search, 
+import {
+  Search,
   Package,
   ArrowDownToLine,
-  ShoppingCart,
   TrendingUp,
   Boxes
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-
-// Sample data
-const sampleBalances = [
-  { 
-    id: '1', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-S-BLK',
-    size: 'S',
-    color: 'Black',
-    qty: 100, 
-    cost: 4500000,
-    unitCost: 45000,
-    warehouse: 'Gudang Utama'
-  },
-  { 
-    id: '2', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-M-BLK',
-    size: 'M',
-    color: 'Black',
-    qty: 150, 
-    cost: 6750000,
-    unitCost: 45000,
-    warehouse: 'Gudang Utama'
-  },
-  { 
-    id: '3', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-L-WHT',
-    size: 'L',
-    color: 'White',
-    qty: 80, 
-    cost: 3600000,
-    unitCost: 45000,
-    warehouse: 'Gudang Utama'
-  },
-  { 
-    id: '4', 
-    productCode: 'TS-002', 
-    productName: 'Kaos Raglan Sport',
-    sku: 'TS-002-M-RED',
-    size: 'M',
-    color: 'Red',
-    qty: 50, 
-    cost: 2750000,
-    unitCost: 55000,
-    warehouse: 'Gudang Utama'
-  },
-];
-
-const sampleLedger = [
-  { 
-    id: '1', 
-    date: '2025-01-17', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-M-BLK',
-    type: 'PRODUCTION_IN',
-    reference: 'WO-2025-001',
-    qtyIn: 50,
-    qtyOut: 0,
-    unitCost: 45000,
-    balance: 150
-  },
-  { 
-    id: '2', 
-    date: '2025-01-16', 
-    productCode: 'TS-001', 
-    productName: 'Kaos Polos Basic',
-    sku: 'TS-001-S-BLK',
-    type: 'SALES_OUT',
-    reference: 'SO-2025-015',
-    qtyIn: 0,
-    qtyOut: 20,
-    unitCost: 45000,
-    balance: 100
-  },
-  { 
-    id: '3', 
-    date: '2025-01-15', 
-    productCode: 'TS-002', 
-    productName: 'Kaos Raglan Sport',
-    sku: 'TS-002-M-RED',
-    type: 'PRODUCTION_IN',
-    reference: 'WO-2025-002',
-    qtyIn: 50,
-    qtyOut: 0,
-    unitCost: 55000,
-    balance: 50
-  },
-];
+import { useApp } from '@/contexts/AppContext';
+import { useFinishedGoodsBalances, useFinishedGoodsLedger } from '@/hooks/useInventory';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function FinishedGoodsLedger() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('balances');
   const navigate = useNavigate();
+  const { companyId } = useApp();
+
+  // Fetch balances
+  const {
+    data: balances,
+    isLoading: isLoadingBalances,
+    error: errorBalances,
+    refetch: refetchBalances
+  } = useFinishedGoodsBalances(companyId);
+
+  // Fetch ledger
+  const {
+    data: ledger,
+    isLoading: isLoadingLedger,
+    error: errorLedger,
+    refetch: refetchLedger
+  } = useFinishedGoodsLedger(companyId);
 
   const getTransactionBadge = (type: string) => {
     switch (type) {
@@ -138,10 +65,41 @@ export default function FinishedGoodsLedger() {
     }
   };
 
-  const totalQty = sampleBalances.reduce((sum, b) => sum + b.qty, 0);
-  const totalValue = sampleBalances.reduce((sum, b) => sum + b.cost, 0);
-  const totalSKUs = sampleBalances.length;
-  const totalProducts = new Set(sampleBalances.map(b => b.productCode)).size;
+  // Filter balances
+  const filteredBalances = (balances || []).filter((b: any) =>
+    b.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.product_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter ledger
+  const filteredLedger = (ledger || []).filter((entry: any) =>
+    entry.product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.product?.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats calculation
+  const totalQty = (balances || []).reduce((sum: number, b: any) => sum + (b.quantity || 0), 0);
+  const totalValue = (balances || []).reduce((sum: number, b: any) => sum + (b.total_value || 0), 0);
+  const totalSKUs = (balances || []).length;
+  // Get unique product count
+  const uniqueProducts = new Set((balances || []).map((b: any) => b.product_code)).size;
+
+  if (errorBalances || errorLedger) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load finished goods data"
+          message={errorBalances?.message || errorLedger?.message || "Unknown error"}
+          onRetry={() => {
+            refetchBalances();
+            refetchLedger();
+          }}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -170,7 +128,7 @@ export default function FinishedGoodsLedger() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalProducts}</div>
+              <div className="text-2xl font-bold">{uniqueProducts}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -228,43 +186,53 @@ export default function FinishedGoodsLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Size</TableHead>
-                      <TableHead>Color</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Unit Cost</TableHead>
-                      <TableHead className="text-right">Total Value</TableHead>
-                      <TableHead>Warehouse</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sampleBalances.map((balance) => (
-                      <TableRow key={balance.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{balance.productName}</div>
-                            <div className="text-xs text-muted-foreground">{balance.productCode}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{balance.sku}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{balance.size}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{balance.color}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">{balance.qty}</TableCell>
-                        <TableCell className="text-right">Rp {balance.unitCost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-right font-medium">Rp {balance.cost.toLocaleString('id-ID')}</TableCell>
-                        <TableCell className="text-sm">{balance.warehouse}</TableCell>
+                {isLoadingBalances ? (
+                  <TableSkeleton rows={5} columns={8} />
+                ) : filteredBalances.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No finished goods found"
+                    description="No finished goods inventory matching your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Color</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Unit Cost</TableHead>
+                        <TableHead className="text-right">Total Value</TableHead>
+                        <TableHead>Warehouse</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBalances.map((balance: any) => (
+                        <TableRow key={balance.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{balance.product_name}</div>
+                              <div className="text-xs text-muted-foreground">{balance.product_code}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{balance.sku}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{balance.size || '-'}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{balance.color || '-'}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{balance.quantity}</TableCell>
+                          <TableCell className="text-right">Rp {(balance.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-right font-medium">Rp {(balance.total_value || 0).toLocaleString('id-ID')}</TableCell>
+                          <TableCell className="text-sm">{balance.location_name || 'Main Warehouse'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -285,45 +253,55 @@ export default function FinishedGoodsLedger() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product / SKU</TableHead>
-                      <TableHead className="text-center">Type</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead className="text-right">In</TableHead>
-                      <TableHead className="text-right">Out</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                      <TableHead className="text-right">Unit Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sampleLedger.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-mono text-sm">
-                          {format(new Date(entry.date), 'dd MMM yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{entry.productName}</div>
-                            <div className="text-xs text-muted-foreground">{entry.sku}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{getTransactionBadge(entry.type)}</TableCell>
-                        <TableCell className="font-mono text-sm">{entry.reference}</TableCell>
-                        <TableCell className="text-right font-mono text-success">
-                          {entry.qtyIn > 0 ? `+${entry.qtyIn}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-destructive">
-                          {entry.qtyOut > 0 ? `-${entry.qtyOut}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">{entry.balance}</TableCell>
-                        <TableCell className="text-right">Rp {entry.unitCost.toLocaleString('id-ID')}</TableCell>
+                {isLoadingLedger ? (
+                  <TableSkeleton rows={5} columns={8} />
+                ) : filteredLedger.length === 0 ? (
+                  <EmptyState
+                    icon={Package}
+                    title="No transactions found"
+                    description="No finished goods transactions found matching your criteria"
+                  />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Product / SKU</TableHead>
+                        <TableHead className="text-center">Type</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead className="text-right">In</TableHead>
+                        <TableHead className="text-right">Out</TableHead>
+                        <TableHead className="text-right">Balance</TableHead>
+                        <TableHead className="text-right">Unit Cost</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLedger.map((entry: any) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-mono text-sm">
+                            {format(new Date(entry.journal_date), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{entry.product?.name}</div>
+                              <div className="text-xs text-muted-foreground">{entry.sku}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getTransactionBadge(entry.transaction_type)}</TableCell>
+                          <TableCell className="font-mono text-sm">{entry.reference_id}</TableCell>
+                          <TableCell className="text-right font-mono text-success">
+                            {entry.qty_in > 0 ? `+${entry.qty_in}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-destructive">
+                            {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium">{entry.balance_after}</TableCell>
+                          <TableCell className="text-right">Rp {(entry.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

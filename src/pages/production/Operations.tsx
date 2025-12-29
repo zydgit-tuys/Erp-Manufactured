@@ -5,40 +5,39 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useWorkCenters, useOperations } from '@/hooks/useProduction';
-import { Plus, Settings, Factory, Loader2, Gauge } from 'lucide-react';
+import { Plus, Settings, Factory, Gauge } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from 'react';
+import { useApp } from '@/contexts/AppContext';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function Operations() {
-    const { data: workCenters, isLoading: wcLoading, error: wcError } = useWorkCenters();
-    const { data: operations, isLoading: opLoading, error: opError } = useOperations();
+    const { companyId } = useApp();
+    const { data: workCenters, isLoading: wcLoading, error: wcError, refetch: wcRefetch } = useWorkCenters(companyId);
+    const { data: operations, isLoading: opLoading, error: opError, refetch: opRefetch } = useOperations(companyId);
     const [isWCCreateOpen, setIsWCCreateOpen] = useState(false);
     const [isOpCreateOpen, setIsOpCreateOpen] = useState(false);
-
-    if (wcLoading || opLoading) {
-        return (
-            <AppLayout>
-                <div className="flex items-center justify-center h-screen">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-            </AppLayout>
-        );
-    }
 
     if (wcError || opError) {
         return (
             <AppLayout>
-                <div className="p-8 text-red-600">
-                    <h2 className="text-xl font-bold">Error loading data</h2>
-                    <p>{wcError?.message || opError?.message}</p>
-                </div>
+                <ErrorState
+                    title="Failed to load Operations data"
+                    message={wcError?.message || opError?.message || 'Unknown error'}
+                    onRetry={() => {
+                        wcRefetch();
+                        opRefetch();
+                    }}
+                />
             </AppLayout>
         );
     }
 
     return (
         <AppLayout>
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Operations & Work Centers</h1>
@@ -72,7 +71,21 @@ export default function Operations() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {operations && operations.length > 0 ? (
+                                {opLoading ? (
+                                    <TableSkeleton rows={5} columns={6} />
+                                ) : !operations || operations.length === 0 ? (
+                                    <EmptyState
+                                        icon={Settings}
+                                        title="No Operations Defined"
+                                        description="Define standard operations like Cutting, Sewing, or QC."
+                                        action={
+                                            <Button onClick={() => setIsOpCreateOpen(true)}>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Add Operation
+                                            </Button>
+                                        }
+                                    />
+                                ) : (
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -103,18 +116,6 @@ export default function Operations() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <Settings className="h-12 w-12 text-muted-foreground/50" />
-                                        <h3 className="mt-4 text-lg font-semibold">No Operations Defined</h3>
-                                        <p className="max-w-sm text-sm text-muted-foreground mt-2">
-                                            Define standard operations like Cutting, Sewing, or QC.
-                                        </p>
-                                        <Button className="mt-6" onClick={() => setIsOpCreateOpen(true)}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add Operation
-                                        </Button>
-                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -138,7 +139,21 @@ export default function Operations() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {workCenters && workCenters.length > 0 ? (
+                                {wcLoading ? (
+                                    <TableSkeleton rows={5} columns={6} />
+                                ) : !workCenters || workCenters.length === 0 ? (
+                                    <EmptyState
+                                        icon={Gauge}
+                                        title="No Work Centers"
+                                        description="Define where production happens (e.g., Sewing Line 1, Cutting Table)."
+                                        action={
+                                            <Button onClick={() => setIsWCCreateOpen(true)}>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Add Work Center
+                                            </Button>
+                                        }
+                                    />
+                                ) : (
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -169,18 +184,6 @@ export default function Operations() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <Gauge className="h-12 w-12 text-muted-foreground/50" />
-                                        <h3 className="mt-4 text-lg font-semibold">No Work Centers</h3>
-                                        <p className="max-w-sm text-sm text-muted-foreground mt-2">
-                                            Define where production happens (e.g., Sewing Line 1, Cutting Table).
-                                        </p>
-                                        <Button className="mt-6" onClick={() => setIsWCCreateOpen(true)}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add Work Center
-                                        </Button>
-                                    </div>
                                 )}
                             </CardContent>
                         </Card>

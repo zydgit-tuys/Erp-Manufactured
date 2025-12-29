@@ -4,7 +4,37 @@
         "lib": [
             "deno.window"
         ],
-        "strict": false
+        "strict": true
     },
-    "importMap": "./import_map.json"
+    "lint": {
+        "files": {
+            "include": [
+                "**/*.ts"
+            ],
+            "exclude": []
+        },
+        "rules": {
+            "tags": [
+                "recommended"
+            ]
+        }
+    },
+    "fmt": {
+        "files": {
+            "include": [
+                "**/*.ts"
+            ],
+            "exclude": []
+        },
+        "options": {
+            "useTabs": false,
+            "lineWidth": 100,
+            "indentWidth": 2,
+            "singleQuote": true,
+            "proseWrap": "preserve"
+        }
+    },
+    "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+    }
 }

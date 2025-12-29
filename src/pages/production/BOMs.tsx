@@ -5,26 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useBOMs } from '@/hooks/useProduction';
-import { Plus, Factory, Loader2 } from 'lucide-react';
+import { Plus, Factory } from 'lucide-react';
 import { useState } from 'react';
+import { useApp } from '@/contexts/AppContext';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function BOMs() {
-    const { data: boms, isLoading } = useBOMs();
+    const { companyId } = useApp();
+    const { data: boms, isLoading, error, refetch } = useBOMs(companyId);
     const [isCreateOpen, setIsCreateOpen] = useState(false); // Placeholder for create modal
 
-    if (isLoading) {
+    if (error) {
         return (
             <AppLayout>
-                <div className="flex items-center justify-center h-screen">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
+                <ErrorState
+                    title="Failed to load BOMs"
+                    message={error.message}
+                    onRetry={() => refetch()}
+                />
             </AppLayout>
         );
     }
 
     return (
         <AppLayout>
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Bill of Materials</h1>
@@ -49,7 +56,21 @@ export default function BOMs() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {boms && boms.length > 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton rows={5} columns={7} />
+                        ) : !boms || boms.length === 0 ? (
+                            <EmptyState
+                                icon={Factory}
+                                title="No BOMs Found"
+                                description="Get started by creating your first Bill of Materials to define how your products are made."
+                                action={
+                                    <Button onClick={() => setIsCreateOpen(true)}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create First BOM
+                                    </Button>
+                                }
+                            />
+                        ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -64,7 +85,7 @@ export default function BOMs() {
                                 </TableHeader>
                                 <TableBody>
                                     {boms.map((bom) => (
-                                        <TableRow key={bom.id}>
+                                        <TableRow key={bom.id} className="cursor-pointer hover:bg-muted/50">
                                             <TableCell className="font-mono">{bom.product?.code}</TableCell>
                                             <TableCell>{bom.product?.name}</TableCell>
                                             <TableCell><Badge variant="outline">{bom.version}</Badge></TableCell>
@@ -82,18 +103,6 @@ export default function BOMs() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <Factory className="h-12 w-12 text-muted-foreground/50" />
-                                <h3 className="mt-4 text-lg font-semibold">No BOMs Found</h3>
-                                <p className="max-w-sm text-sm text-muted-foreground mt-2">
-                                    Get started by creating your first Bill of Materials to define how your products are made.
-                                </p>
-                                <Button className="mt-6" onClick={() => setIsCreateOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create First BOM
-                                </Button>
-                            </div>
                         )}
                     </CardContent>
                 </Card>

@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   ArrowLeftRight,
   FileText,
   CheckCircle,
@@ -24,57 +24,24 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-
-// Sample data
-const sampleTransfers = [
-  { 
-    id: '1', 
-    number: 'TRF-2025-001', 
-    date: '2025-01-15',
-    type: 'RAW',
-    fromWarehouse: 'Gudang Utama',
-    fromBin: 'A-01',
-    toWarehouse: 'Gudang Produksi',
-    toBin: 'P-01',
-    status: 'posted',
-    totalQty: 100,
-    totalValue: 2500000,
-    createdBy: 'Admin'
-  },
-  { 
-    id: '2', 
-    number: 'TRF-2025-002', 
-    date: '2025-01-16',
-    type: 'FG',
-    fromWarehouse: 'Gudang Produksi',
-    fromBin: 'FG-01',
-    toWarehouse: 'Gudang Utama',
-    toBin: 'B-02',
-    status: 'posted',
-    totalQty: 50,
-    totalValue: 2250000,
-    createdBy: 'Admin'
-  },
-  { 
-    id: '3', 
-    number: 'TRF-2025-003', 
-    date: '2025-01-17',
-    type: 'RAW',
-    fromWarehouse: 'Gudang Utama',
-    fromBin: 'A-02',
-    toWarehouse: 'Gudang Utama',
-    toBin: 'A-05',
-    status: 'draft',
-    totalQty: 200,
-    totalValue: 3000000,
-    createdBy: 'Admin'
-  },
-];
+import { useApp } from '@/contexts/AppContext';
+import { useInternalTransfers } from '@/hooks/useInventory';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function InternalTransfers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const navigate = useNavigate();
+  const { companyId } = useApp();
+
+  const {
+    data: transfers,
+    isLoading,
+    error,
+    refetch
+  } = useInternalTransfers(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,15 +67,30 @@ export default function InternalTransfers() {
     }
   };
 
-  const filteredTransfers = statusFilter === 'all'
-    ? sampleTransfers
-    : sampleTransfers.filter(t => t.status === statusFilter);
+  const filteredTransfers = (transfers || []).filter((t: any) => {
+    const matchesSearch = t.transfer_number?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const draftCount = sampleTransfers.filter(t => t.status === 'draft').length;
-  const postedCount = sampleTransfers.filter(t => t.status === 'posted').length;
-  const totalTransferred = sampleTransfers
-    .filter(t => t.status === 'posted')
-    .reduce((sum, t) => sum + t.totalValue, 0);
+  const draftCount = (transfers || []).filter((t: any) => t.status === 'draft').length;
+  const postedCount = (transfers || []).filter((t: any) => t.status === 'posted').length;
+
+  // Assuming totalValue is not readily available on the list object or we need to calculate it if provided.
+  // Will set to 0 or display '-' if not available.
+  const totalTransferred = 0;
+
+  if (error) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load internal transfers"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -135,7 +117,7 @@ export default function InternalTransfers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleTransfers.length}</div>
+              <div className="text-2xl font-bold">{transfers?.length || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -165,7 +147,7 @@ export default function InternalTransfers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Rp {totalTransferred.toLocaleString('id-ID')}</div>
+              <div className="text-2xl font-bold">-</div>
             </CardContent>
           </Card>
         </div>
@@ -184,22 +166,22 @@ export default function InternalTransfers() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant={statusFilter === 'all' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('all')}
                 >
                   All
                 </Button>
-                <Button 
-                  variant={statusFilter === 'draft' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'draft' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('draft')}
                 >
                   Draft
                 </Button>
-                <Button 
-                  variant={statusFilter === 'posted' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'posted' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('posted')}
                 >
@@ -209,58 +191,67 @@ export default function InternalTransfers() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Number</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-center">Type</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>To</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransfers.map((transfer) => (
-                  <TableRow 
-                    key={transfer.id} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/inventory/transfers/${transfer.id}`)}
-                  >
-                    <TableCell className="font-mono text-sm font-medium">{transfer.number}</TableCell>
-                    <TableCell>{format(new Date(transfer.date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell className="text-center">{getTypeBadge(transfer.type)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Warehouse className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{transfer.fromWarehouse}</span>
-                        <span className="text-xs text-muted-foreground">({transfer.fromBin})</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Warehouse className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{transfer.toWarehouse}</span>
-                        <span className="text-xs text-muted-foreground">({transfer.toBin})</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{transfer.totalQty}</TableCell>
-                    <TableCell className="text-right font-mono">Rp {transfer.totalValue.toLocaleString('id-ID')}</TableCell>
-                    <TableCell className="text-center">{getStatusBadge(transfer.status)}</TableCell>
-                  </TableRow>
-                ))}
-                {filteredTransfers.length === 0 && (
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={8} />
+            ) : filteredTransfers.length === 0 ? (
+              <EmptyState
+                icon={ArrowLeftRight}
+                title="No transfers found"
+                description={
+                  searchQuery
+                    ? "No transfers match your search criteria"
+                    : "Create your first internal transfer to get started"
+                }
+                action={
+                  !searchQuery && (
+                    <Button onClick={() => navigate('/inventory/transfers/new')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      New Transfer
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <ArrowLeftRight className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No transfers found</p>
-                    </TableCell>
+                    <TableHead>Number</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-center">Type</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransfers.map((transfer: any) => (
+                    <TableRow
+                      key={transfer.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/inventory/transfers/${transfer.id}`)}
+                    >
+                      <TableCell className="font-mono text-sm font-medium">{transfer.transfer_number}</TableCell>
+                      <TableCell>{format(new Date(transfer.transfer_date), 'dd MMM yyyy')}</TableCell>
+                      <TableCell className="text-center">{getTypeBadge(transfer.transfer_type || 'RAW')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Warehouse className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">{transfer.source_location?.location_name || '-'}</span>
+                          {/* Bin info removed as it's typically line level not header level */}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Warehouse className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">{transfer.destination_location?.location_name || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">{getStatusBadge(transfer.status)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

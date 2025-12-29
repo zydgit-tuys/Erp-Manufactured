@@ -14,21 +14,36 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const sampleVendors = [
-  { id: '1', code: 'VND-001', name: 'Supplier Kain Jaya', contactPerson: 'Budi Santoso', phone: '081234567890', isActive: true },
-  { id: '2', code: 'VND-002', name: 'Supplier Aksesoris Maju', contactPerson: 'Siti Rahayu', phone: '081234567891', isActive: true },
-];
+import { useVendors } from '@/hooks/useMasterData';
+import { useApp } from '@/contexts/AppContext';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function Vendors() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { companyId } = useApp();
 
-  const filteredVendors = sampleVendors.filter(
+  const { data: vendors, isLoading, error, refetch } = useVendors(companyId);
+
+  const filteredVendors = (vendors || []).filter(
     (vendor) =>
       vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vendor.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (error) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load vendors"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -54,7 +69,7 @@ export default function Vendors() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleVendors.length}</div>
+              <div className="text-2xl font-bold">{vendors?.length || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -65,7 +80,7 @@ export default function Vendors() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {sampleVendors.filter((v) => v.isActive).length}
+                {vendors?.filter((v) => v.is_active).length || 0}
               </div>
             </CardContent>
           </Card>
@@ -86,46 +101,60 @@ export default function Vendors() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVendors.map((vendor) => (
-                  <TableRow
-                    key={vendor.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/vendors/${vendor.id}`)}
-                  >
-                    <TableCell className="font-mono text-sm">
-                      {vendor.code}
-                    </TableCell>
-                    <TableCell className="font-medium">{vendor.name}</TableCell>
-                    <TableCell>{vendor.contactPerson}</TableCell>
-                    <TableCell>{vendor.phone}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={vendor.isActive ? 'default' : 'secondary'}>
-                        {vendor.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredVendors.length === 0 && (
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={5} />
+            ) : filteredVendors.length === 0 ? (
+              <EmptyState
+                icon={Truck}
+                title={searchQuery ? "No vendors found" : "No vendors yet"}
+                description={
+                  searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Get started by adding your first vendor"
+                }
+                action={
+                  !searchQuery && (
+                    <Button onClick={() => navigate('/vendors/new')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Vendor
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      <Truck className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No vendors found</p>
-                    </TableCell>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredVendors.map((vendor) => (
+                    <TableRow
+                      key={vendor.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/vendors/${vendor.id}`)}
+                    >
+                      <TableCell className="font-mono text-sm">
+                        {vendor.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{vendor.name}</TableCell>
+                      <TableCell>{vendor.contact_person}</TableCell>
+                      <TableCell>{vendor.phone}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={vendor.is_active ? 'default' : 'secondary'}>
+                          {vendor.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

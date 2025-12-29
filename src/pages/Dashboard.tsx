@@ -2,19 +2,35 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Layers, Truck, Users, Calendar, BookOpen, Plus } from 'lucide-react';
+import { Package, Layers, Truck, Users, Calendar, BookOpen, Plus, Loader2 } from 'lucide-react';
+import { useApp } from '@/contexts/AppContext';
+import { useMaterials } from '@/hooks/useMaterials';
+import { useProducts, useVendors, useCustomers } from '@/hooks/useMasterData';
+import { useAccountingPeriods, useChartOfAccounts } from '@/hooks/useAccounting';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
 export default function Dashboard() {
+  const { companyId } = useApp();
+
+  // Fetch key metrics
+  const { data: products, isLoading: productsLoading } = useProducts(companyId);
+  const { data: materials, isLoading: materialsLoading } = useMaterials(); // already uses context internally if updated? Let's check. Yes, previously verified.
+  const { data: vendors, isLoading: vendorsLoading } = useVendors(companyId);
+  const { data: customers, isLoading: customersLoading } = useCustomers(companyId);
+  const { data: periods, isLoading: periodsLoading } = useAccountingPeriods(companyId);
+  const { data: coaData, isLoading: coaLoading } = useChartOfAccounts(companyId);
+
   const quickActions = [
     {
       title: 'Add Product',
-      description: 'Create a new product with variants',
+      description: 'Create a new product',
       icon: Plus,
       href: '/products/new',
     },
     {
       title: 'Add Material',
-      description: 'Register new raw material',
+      description: 'Register raw material',
       icon: Plus,
       href: '/materials/new',
     },
@@ -26,11 +42,31 @@ export default function Dashboard() {
     },
     {
       title: 'Add Customer',
-      description: 'Register new customer',
+      description: 'Register customer',
       icon: Plus,
       href: '/customers/new',
     },
   ];
+
+  // Calculations
+  const activeProducts = products?.filter(p => p.is_active).length || 0;
+  const totalVariants = products?.reduce((sum, p) => sum + (p.variant_count || 0), 0) || 0;
+
+  const lowStockMaterials = materials?.filter(m => m.current_stock <= m.reorder_level).length || 0;
+
+  const activeVendors = vendors?.filter(v => v.is_active).length || 0;
+  const activeCustomers = customers?.filter(c => c.is_active).length || 0;
+
+  const currentPeriod = periods?.find(p => p.status === 'open');
+
+  const accounts = coaData?.flat || [];
+  const assetCount = accounts.filter(a => a.account_type === 'ASSET').length;
+  const liabilityCount = accounts.filter(a => a.account_type === 'LIABILITY').length;
+  const equityCount = accounts.filter(a => a.account_type === 'EQUITY').length;
+  const revenueCount = accounts.filter(a => a.account_type === 'REVENUE').length;
+  const expenseCount = accounts.filter(a => a.account_type === 'EXPENSE').length;
+
+  const isLoading = productsLoading || materialsLoading || vendorsLoading || customersLoading || periodsLoading || coaLoading;
 
   return (
     <AppLayout>
@@ -47,26 +83,27 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Products"
-            value="45"
-            description="5 product lines, 45 SKUs"
+            value={productsLoading ? "..." : products?.length.toString() || "0"}
+            description={`${totalVariants} variants, ${activeProducts} active`}
             icon={Package}
           />
           <StatsCard
             title="Materials"
-            value="3"
-            description="All stock levels normal"
+            value={materialsLoading ? "..." : materials?.length.toString() || "0"}
+            description={lowStockMaterials > 0 ? `${lowStockMaterials} items low stock` : "All stock levels normal"}
             icon={Layers}
+            trend={lowStockMaterials > 0 ? 'down' : 'up'}
           />
           <StatsCard
             title="Vendors"
-            value="2"
-            description="Active suppliers"
+            value={vendorsLoading ? "..." : vendors?.length.toString() || "0"}
+            description={`${activeVendors} active suppliers`}
             icon={Truck}
           />
           <StatsCard
             title="Customers"
-            value="0"
-            description="No customers yet"
+            value={customersLoading ? "..." : customers?.length.toString() || "0"}
+            description={`${activeCustomers} active customers`}
             icon={Users}
           />
         </div>
@@ -85,22 +122,35 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Period</span>
-                  <span className="font-mono font-medium">2025-01</span>
+              {periodsLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
-                    Open
-                  </span>
+              ) : currentPeriod ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Period</span>
+                    <span className="font-mono font-medium">{currentPeriod.period_code}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
+                      Open
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Date Range</span>
+                    <span className="text-sm">
+                      {format(new Date(currentPeriod.start_date), 'MMM d')} - {format(new Date(currentPeriod.end_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Date Range</span>
-                  <span className="text-sm">Jan 1 - Jan 31, 2025</span>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No open accounting period.</p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -111,31 +161,41 @@ export default function Dashboard() {
                 <BookOpen className="h-5 w-5 text-primary" />
                 Chart of Accounts
               </CardTitle>
-              <CardDescription>Konveksi template loaded</CardDescription>
+              <CardDescription>
+                {coaLoading ? <Skeleton className="h-4 w-20" /> : `${accounts.length} total accounts`}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Assets (1xxx)</span>
-                  <span className="font-medium">10 accounts</span>
+              {coaLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Liabilities (2xxx)</span>
-                  <span className="font-medium">5 accounts</span>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Assets</span>
+                    <span className="font-medium">{assetCount} accounts</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Liabilities</span>
+                    <span className="font-medium">{liabilityCount} accounts</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Equity</span>
+                    <span className="font-medium">{equityCount} accounts</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Revenue</span>
+                    <span className="font-medium">{revenueCount} accounts</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Expenses</span>
+                    <span className="font-medium">{expenseCount} accounts</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Equity (3xxx)</span>
-                  <span className="font-medium">3 accounts</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Revenue (4xxx)</span>
-                  <span className="font-medium">4 accounts</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Expenses (5-6xxx)</span>
-                  <span className="font-medium">15 accounts</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

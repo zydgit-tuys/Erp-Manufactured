@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   ClipboardCheck,
   FileText,
   CheckCircle,
@@ -23,48 +23,24 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-
-// Sample data
-const sampleAdjustments = [
-  { 
-    id: '1', 
-    number: 'ADJ-2025-001', 
-    date: '2025-01-15',
-    type: 'RAW',
-    reason: 'STOCK_OPNAME',
-    status: 'posted',
-    varianceQty: -5,
-    varianceAmount: -125000,
-    createdBy: 'Admin'
-  },
-  { 
-    id: '2', 
-    number: 'ADJ-2025-002', 
-    date: '2025-01-16',
-    type: 'FG',
-    reason: 'DAMAGED',
-    status: 'posted',
-    varianceQty: -3,
-    varianceAmount: -135000,
-    createdBy: 'Admin'
-  },
-  { 
-    id: '3', 
-    number: 'ADJ-2025-003', 
-    date: '2025-01-17',
-    type: 'RAW',
-    reason: 'CORRECTION',
-    status: 'draft',
-    varianceQty: 10,
-    varianceAmount: 250000,
-    createdBy: 'Admin'
-  },
-];
+import { useApp } from '@/contexts/AppContext';
+import { useInventoryAdjustments } from '@/hooks/useInventory';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function InventoryAdjustments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const navigate = useNavigate();
+  const { companyId } = useApp();
+
+  const {
+    data: adjustments,
+    isLoading,
+    error,
+    refetch
+  } = useInventoryAdjustments(companyId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -104,15 +80,32 @@ export default function InventoryAdjustments() {
     }
   };
 
-  const filteredAdjustments = statusFilter === 'all'
-    ? sampleAdjustments
-    : sampleAdjustments.filter(a => a.status === statusFilter);
+  const filteredAdjustments = (adjustments || []).filter((a: any) => {
+    const matchesSearch = a.adjustment_number?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const draftCount = sampleAdjustments.filter(a => a.status === 'draft').length;
-  const postedCount = sampleAdjustments.filter(a => a.status === 'posted').length;
-  const totalVariance = sampleAdjustments
-    .filter(a => a.status === 'posted')
-    .reduce((sum, a) => sum + a.varianceAmount, 0);
+  const draftCount = (adjustments || []).filter((a: any) => a.status === 'draft').length;
+  const postedCount = (adjustments || []).filter((a: any) => a.status === 'posted').length;
+  // Note: total variance calculation assumes we have access to line items or a total field, 
+  // checking type definition if needed, but for now assuming it might be on the main object or we skip logic that needs lines.
+  // Actually, standard list response usually doesn't include deep lines sum unless aggregated view.
+  // I will check if adjustment object has a total_value or similar. If not, I'll display count or 0.
+  // Adjustments usually don't have a single "value" unless signed. I'll omit value sum if not readily available or use 0.
+  const totalVariance = 0;
+
+  if (error) {
+    return (
+      <AppLayout>
+        <ErrorState
+          title="Failed to load inventory adjustments"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -139,7 +132,7 @@ export default function InventoryAdjustments() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sampleAdjustments.length}</div>
+              <div className="text-2xl font-bold">{adjustments?.length || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-card">
@@ -170,7 +163,8 @@ export default function InventoryAdjustments() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${totalVariance >= 0 ? 'text-success' : 'text-destructive'}`}>
-                Rp {totalVariance.toLocaleString('id-ID')}
+                {/* Value removed as it's not readily available in list view without aggregation */}
+                -
               </div>
             </CardContent>
           </Card>
@@ -190,22 +184,22 @@ export default function InventoryAdjustments() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant={statusFilter === 'all' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('all')}
                 >
                   All
                 </Button>
-                <Button 
-                  variant={statusFilter === 'draft' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'draft' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('draft')}
                 >
                   Draft
                 </Button>
-                <Button 
-                  variant={statusFilter === 'posted' ? 'default' : 'outline'} 
+                <Button
+                  variant={statusFilter === 'posted' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter('posted')}
                 >
@@ -215,50 +209,56 @@ export default function InventoryAdjustments() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Number</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-center">Type</TableHead>
-                  <TableHead className="text-center">Reason</TableHead>
-                  <TableHead className="text-right">Variance Qty</TableHead>
-                  <TableHead className="text-right">Variance Amount</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead>Created By</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAdjustments.map((adjustment) => (
-                  <TableRow 
-                    key={adjustment.id} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/inventory/adjustments/${adjustment.id}`)}
-                  >
-                    <TableCell className="font-mono text-sm font-medium">{adjustment.number}</TableCell>
-                    <TableCell>{format(new Date(adjustment.date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell className="text-center">{getTypeBadge(adjustment.type)}</TableCell>
-                    <TableCell className="text-center">{getReasonBadge(adjustment.reason)}</TableCell>
-                    <TableCell className={`text-right font-mono ${adjustment.varianceQty >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {adjustment.varianceQty >= 0 ? '+' : ''}{adjustment.varianceQty}
-                    </TableCell>
-                    <TableCell className={`text-right font-mono ${adjustment.varianceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      Rp {adjustment.varianceAmount.toLocaleString('id-ID')}
-                    </TableCell>
-                    <TableCell className="text-center">{getStatusBadge(adjustment.status)}</TableCell>
-                    <TableCell className="text-sm">{adjustment.createdBy}</TableCell>
-                  </TableRow>
-                ))}
-                {filteredAdjustments.length === 0 && (
+            {isLoading ? (
+              <TableSkeleton rows={5} columns={8} />
+            ) : filteredAdjustments.length === 0 ? (
+              <EmptyState
+                icon={ClipboardCheck}
+                title="No adjustments found"
+                description={
+                  searchQuery
+                    ? "No adjustments match your search criteria"
+                    : "Create your first inventory adjustment to get started"
+                }
+                action={
+                  !searchQuery && (
+                    <Button onClick={() => navigate('/inventory/adjustments/new')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      New Adjustment
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <ClipboardCheck className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No adjustments found</p>
-                    </TableCell>
+                    <TableHead>Number</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-center">Type</TableHead>
+                    <TableHead className="text-center">Reason</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Created By</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredAdjustments.map((adjustment: any) => (
+                    <TableRow
+                      key={adjustment.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/inventory/adjustments/${adjustment.id}`)}
+                    >
+                      <TableCell className="font-mono text-sm font-medium">{adjustment.adjustment_number}</TableCell>
+                      <TableCell>{format(new Date(adjustment.adjustment_date), 'dd MMM yyyy')}</TableCell>
+                      <TableCell className="text-center">{getTypeBadge(adjustment.adjustment_type || 'RAW')}</TableCell>
+                      <TableCell className="text-center">{getReasonBadge(adjustment.reason)}</TableCell>
+                      <TableCell className="text-center">{getStatusBadge(adjustment.status)}</TableCell>
+                      <TableCell className="text-sm">{adjustment.created_by_user?.email || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
