@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SalesInvoice } from '@/types/sales';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export default function SalesInvoices() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isPayDialogOpen, setIsPayDialogOpen] = useState(false);
-    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+    const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
     const [paymentAmount, setPaymentAmount] = useState<string>('');
 
     const handlePay = async () => {

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/contexts/AppContext';
+import { SalesInvoice } from '@/types/sales';
 
 export const useVendorInvoices = (companyId: string) => {
     return useQuery({
@@ -142,7 +143,7 @@ export const useSalesInvoices = (companyId: string) => {
                 .order('invoice_date', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data as SalesInvoice[];
         },
         enabled: !!companyId,
     });
