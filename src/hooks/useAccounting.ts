@@ -18,7 +18,20 @@ export interface AccountingPeriod {
     updated_at: string;
 }
 
-// ... (Account interface remains same) ...
+export interface Account {
+    id: string;
+    company_id: string;
+    account_code: string;
+    account_name: string;
+    account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+    account_category: string;
+    parent_account_id?: string;
+    level: number;
+    is_header: boolean;
+    is_active: boolean;
+    normal_balance: 'DEBIT' | 'CREDIT';
+    children?: Account[];
+}
 
 export const useAccountingPeriods = (companyId: string) => {
     return useQuery({
