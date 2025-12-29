@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useWorkOrders } from '@/hooks/useProduction';
+import { useProductionOrders } from '@/hooks/useProduction';
 import { Plus, ClipboardCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
@@ -14,7 +14,7 @@ import { ErrorState } from '@/components/ui/error-state';
 
 export default function WorkOrders() {
     const { companyId } = useApp();
-    const { data: workOrders, isLoading, error, refetch } = useWorkOrders(companyId);
+    const { data: workOrders, isLoading, error, refetch } = useProductionOrders(companyId);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     if (error) {
@@ -85,7 +85,7 @@ export default function WorkOrders() {
                                 <TableBody>
                                     {workOrders.map((wo) => (
                                         <TableRow key={wo.id} className="cursor-pointer hover:bg-muted/50">
-                                            <TableCell className="font-mono">{wo.wo_number}</TableCell>
+                                            <TableCell className="font-mono">{wo.po_number}</TableCell>
                                             <TableCell>{wo.product?.name}</TableCell>
                                             <TableCell>{wo.qty_planned}</TableCell>
                                             <TableCell>

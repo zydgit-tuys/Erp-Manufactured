@@ -4,47 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/contexts/AppContext';
 
-export interface BOMHeader {
-    id: string;
-    company_id: string;
-    product_id: string;
-    version: string;
-    is_active: boolean;
-    base_qty: number;
-    yield_percentage: number;
-    notes?: string;
-    created_at: string;
-    product?: {
-        code: string;
-        name: string;
-    };
-}
-
-export interface BOMLine {
-    id: string;
-    bom_id: string;
-    line_number: number;
-    material_id?: string;
-    component_product_id?: string;
-    qty_per: number;
-    uom: string;
-    scrap_percentage: number;
-    stage: string;
-}
-
-export interface WorkOrder {
-    id: string;
-    wo_number: string;
-    product_id: string;
-    status: 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled';
-    qty_planned: number;
-    start_date: string;
-    due_date: string;
-    product?: {
-        code: string;
-        name: string;
-    };
-}
+import { BOMHeader, ProductionOrder } from '@/types/production';
 
 export interface WorkCenter {
     id: string;
@@ -122,12 +82,10 @@ export const useCreateBOM = () => {
     });
 };
 
-export const useWorkOrders = (companyId: string) => {
+export const useProductionOrders = (companyId: string) => {
     return useQuery({
-        queryKey: ['work_orders', companyId],
+        queryKey: ['production_orders', companyId],
         queryFn: async () => {
-            // Check if table exists first to avoid crashing if migration not run
-            // But we assume schema exists. Using direct call.
             const { data, error } = await supabase
                 .from('production_orders')
                 .select(`
@@ -138,10 +96,10 @@ export const useWorkOrders = (companyId: string) => {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.warn("Fetch Work Orders failed", error);
+                console.warn("Fetch Production Orders failed", error);
                 throw error;
             }
-            return data as WorkOrder[];
+            return data as ProductionOrder[];
         },
         enabled: !!companyId,
     });
