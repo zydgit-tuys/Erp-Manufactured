@@ -700,4 +700,103 @@ export const useDeleteCustomer = () => {
     });
 };
 
+export interface Warehouse {
+    id: string;
+    company_id: string;
+    code: string;
+    name: string;
+    address?: string;
+    description?: string;
+    is_active: boolean;
+    created_by: string;
+    created_at: string;
+}
+
+export const useWarehouses = (companyId: string) => {
+    return useQuery({
+        queryKey: ['warehouses', companyId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('warehouses')
+                .select('*')
+                .eq('company_id', companyId)
+                .order('name');
+            if (error) throw error;
+            return data as Warehouse[];
+        },
+        enabled: !!companyId
+    });
+};
+
+export const useCreateWarehouse = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { companyId, userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (payload: any) => {
+            const { data, error } = await supabase
+                .from('warehouses')
+                .insert({
+                    company_id: companyId,
+                    created_by: userId,
+                    ...payload,
+                    is_active: payload.is_active ?? true
+                })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['warehouses'] });
+            toast({ title: "Warehouse Created", description: "Warehouse has been added successfully." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useUpdateWarehouse = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async ({ id, ...payload }: any) => {
+            const { error } = await supabase
+                .from('warehouses')
+                .update(payload)
+                .eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['warehouses'] });
+            toast({ title: "Warehouse Updated", description: "Warehouse details saved successfully." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useDeleteWarehouse = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('warehouses').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['warehouses'] });
+            toast({ title: "Warehouse Deleted", description: "Warehouse has been removed." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
 
