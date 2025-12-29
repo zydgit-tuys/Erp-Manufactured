@@ -800,3 +800,31 @@ export const useDeleteWarehouse = () => {
 };
 
 
+
+export interface Bin {
+    id: string;
+    warehouse_id: string;
+    code: string;
+    name: string;
+    description?: string;
+    is_active: boolean;
+}
+
+export const useBins = (warehouseId: string) => {
+    return useQuery({
+        queryKey: ['bins', warehouseId],
+        queryFn: async () => {
+            if (!warehouseId) return [] as Bin[];
+
+            const { data, error } = await supabase
+                .from('bins')
+                .select('*')
+                .eq('warehouse_id', warehouseId)
+                .order('code');
+
+            if (error) throw error;
+            return data as Bin[];
+        },
+        enabled: !!warehouseId,
+    });
+};

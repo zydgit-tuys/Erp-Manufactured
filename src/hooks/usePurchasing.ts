@@ -4,39 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/contexts/AppContext';
 
-export interface PurchaseOrder {
-    id: string;
-    company_id: string;
-    po_number: string;
-    po_date: string;
-    vendor_id: string;
-    warehouse_id: string;
-    status: 'draft' | 'submitted' | 'approved' | 'partial' | 'closed' | 'cancelled';
-    total_amount: number;
-    delivery_date?: string;
-    notes?: string;
-    vendor?: {
-        name: string;
-        code: string;
-    };
-    created_at: string;
-}
-
-export interface PurchaseOrderLine {
-    id: string;
-    po_id: string;
-    material_id: string;
-    qty_ordered: number;
-    qty_received: number;
-    qty_invoiced: number;
-    unit_price: number;
-    line_total: number;
-    material?: {
-        name: string;
-        code: string;
-        unit_of_measure: string;
-    };
-}
+import {
+    PurchaseOrder,
+    PurchaseOrderLine,
+    CreateGRNPayload,
+    GoodsReceiptNote
+} from '@/types/purchasing';
 
 export interface CreatePOPayload {
     vendor_id: string;
@@ -167,13 +140,6 @@ export const useUpdatePOLine = () => {
 
     return useMutation({
         mutationFn: async ({ id, qty_received }: { id: string, qty_received: number }) => {
-            // First get current qty to increment? Or we replace?
-            // Usually we want to increment. But here we might just set the total received?
-            // Let's assume the UI manages the TOTAL received or the DELTA.
-            // The UI in ReceiveGoods.tsx calculates 'receivedItems' which seems to be the DELTA (amount being received NOW).
-            // So we need to fetch current, add delta, and update.
-
-            // 1. Fetch current line
             const { data: line, error: fetchError } = await supabase
                 .from('purchase_order_lines')
                 .select('qty_received')
@@ -197,6 +163,117 @@ export const useUpdatePOLine = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
             queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+        },
+    });
+};
+
+export const useCreateGRN = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { companyId, userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (payload: CreateGRNPayload) => {
+            if (!companyId) throw new Error('Company ID is required');
+
+            // 1. Get open period
+            const { data: period, error: periodError } = await supabase
+                .from('accounting_periods')
+                .select('id')
+                .eq('company_id', companyId)
+                .eq('status', 'open')
+                .lte('start_date', payload.grn_date)
+                .gte('end_date', payload.grn_date)
+                .single();
+
+            if (periodError || !period) throw new Error('No open accounting period found for the GRN date');
+
+            // 2. Generate GRN Number
+            const grnNumber = `GRN-${Date.now().toString().slice(-6)}`;
+
+            // 3. Create GRN Header
+            const { data: grn, error: grnError } = await supabase
+                .from('goods_receipt_notes')
+                .insert({
+                    company_id: companyId,
+                    grn_number: grnNumber,
+                    grn_date: payload.grn_date,
+                    po_id: payload.po_id,
+                    vendor_id: payload.vendor_id,
+                    warehouse_id: payload.warehouse_id,
+                    period_id: period.id,
+                    created_by: userId,
+                    status: 'draft',
+                    delivery_note_number: payload.delivery_note_number,
+                    vehicle_number: payload.vehicle_number,
+                    notes: payload.notes
+                })
+                .select()
+                .single();
+
+            if (grnError) throw grnError;
+
+            // 4. Create GRN Lines
+            const lines = payload.items.map(item => ({
+                grn_id: grn.id,
+                po_line_id: item.po_line_id,
+                material_id: item.material_id,
+                bin_id: item.bin_id,
+                qty_received: item.qty_received,
+                unit_cost: item.unit_cost,
+                notes: item.notes
+            }));
+
+            const { error: linesError } = await supabase
+                .from('grn_lines')
+                .insert(lines);
+
+            if (linesError) throw linesError;
+
+            return grn;
+        },
+        onSuccess: () => {
+            // We don't toast here usually if we chain post, but it's okay
+        },
+        onError: (error) => {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to create GRN',
+                description: error.message,
+            });
+        },
+    });
+};
+
+export const usePostGRN = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (grnId: string) => {
+            const { error } = await supabase.rpc('post_grn', {
+                p_grn_id: grnId,
+                p_user_id: userId
+            });
+
+            if (error) throw error;
+            return true;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
+            queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+            toast({
+                title: 'GRN Posted',
+                description: 'Inventory updated and PO status updated.',
+            });
+        },
+        onError: (error) => {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to post GRN',
+                description: error.message,
+            });
         },
     });
 };

@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Loader2, PackageCheck } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { usePurchaseOrder, useUpdatePOLine } from '@/hooks/usePurchasing';
-import { useReceiveRawMaterial } from '@/hooks/useInventory';
+import { usePurchaseOrder, useCreateGRN, usePostGRN } from '@/hooks/usePurchasing';
+import { useBins } from '@/hooks/useMasterData';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,8 +21,10 @@ export default function ReceiveGoods() {
     const { toast } = useToast();
 
     const { data: order, isLoading, error } = usePurchaseOrder(id || '');
-    const { mutateAsync: receiveMaterial } = useReceiveRawMaterial();
-    const { mutateAsync: updatePOLine } = useUpdatePOLine();
+    const { data: bins } = useBins(warehouseId);
+
+    const createGRN = useCreateGRN();
+    const postGRN = usePostGRN();
 
     const [receivedItems, setReceivedItems] = useState<{
         [key: string]: number // lineId -> qty
@@ -57,36 +59,49 @@ export default function ReceiveGoods() {
             return;
         }
 
+        if (!bins || bins.length === 0) {
+            toast({ title: "No Bins Found", description: "Warehouse has no bins configured.", variant: "destructive" });
+            return;
+        }
+
+        const defaultBinId = bins[0].id; // MVP: Use first bin
+
         setIsProcessing(true);
         try {
-            // Process each line item
-            await Promise.all(itemsToReceive.map(async ([lineId, qty]) => {
-                const line = order?.lines?.find(l => l.id === lineId);
-                if (!line) return;
+            // 1. Create Draft GRN
+            // We map the received items to GRN Lines
 
-                // 1. Update Inventory Ledger
-                // Note: receiveRawMaterial inserts into ledger.
-                await receiveMaterial({
-                    company_id: companyId,
-                    warehouse_id: warehouseId,
-                    material_id: line.material_id,
-                    qty_in: qty,
-                    unit_cost: line.unit_price, // Using PO price as cost basis
-                    transaction_date: new Date().toISOString(),
-                    notes: `PO Receipt: ${order?.po_number}. ${notes}`,
-                    reference_id: order?.id,
-                    document_number: notes // Using notes as ref number for now if provided
-                });
+            const grnPayload = {
+                company_id: companyId,
+                po_id: order?.id || '',
+                vendor_id: order?.vendor_id || '',
+                warehouse_id: warehouseId,
+                grn_date: new Date().toISOString().split('T')[0], // Today
+                notes: notes,
+                items: itemsToReceive.map(([lineId, qty]) => {
+                    const line = order?.lines?.find(l => l.id === lineId);
+                    return {
+                        po_line_id: lineId,
+                        material_id: line?.material_id || '',
+                        qty_received: qty,
+                        unit_cost: line?.unit_price || 0,
+                        bin_id: defaultBinId, // Using default bin for now
+                        notes: `Recv from PO ${order?.po_number}`
+                    };
+                })
+            };
 
-                // 2. Update PO Line (which triggers PO status update)
-                await updatePOLine({ id: lineId, qty_received: qty });
-            }));
+            const grn = await createGRN.mutateAsync(grnPayload);
 
-            toast({ title: "Goods received successfully", description: "Inventory and PO status have been updated." });
+            // 2. Post GRN (updates Ledger and PO Status)
+            await postGRN.mutateAsync(grn.id);
+
+            // Success handled by hook onSuccess usually, but since we chain, we navigate here.
+
             navigate('/purchasing/receipts');
         } catch (err: any) {
             console.error(err);
-            toast({ title: "Failed to process receipts", description: err.message || "An error occurred", variant: "destructive" });
+            // Error toast handled by hook
         } finally {
             setIsProcessing(false);
         }
