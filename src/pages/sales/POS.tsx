@@ -1,4 +1,15 @@
-import { useState } from 'react';
+import { PaymentMethod } from '@/types/sales';
+
+// State
+const [searchQuery, setSearchQuery] = useState('');
+const [cart, setCart] = useState<{
+    variantId: string;
+    name: string;
+    sku: string;
+    price: number;
+    qty: number;
+}[]>([]);
+const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +46,7 @@ export default function POS() {
         price: number;
         qty: number;
     }[]>([]);
-    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'QRIS'>('CASH');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
     const [amountTendered, setAmountTendered] = useState<number | ''>('');
 
     // Filter Products
@@ -251,20 +262,20 @@ export default function POS() {
                             <span className="text-xs">Cash</span>
                         </Button>
                         <Button
-                            variant={paymentMethod === 'CARD' ? 'default' : 'outline'}
-                            onClick={() => setPaymentMethod('CARD')}
+                            variant={paymentMethod === 'CREDIT_CARD' ? 'default' : 'outline'}
+                            onClick={() => setPaymentMethod('CREDIT_CARD')}
                             className="flex flex-col h-auto py-2 gap-1"
                         >
                             <CreditCard className="h-4 w-4" />
                             <span className="text-xs">Card</span>
                         </Button>
                         <Button
-                            variant={paymentMethod === 'QRIS' ? 'default' : 'outline'}
-                            onClick={() => setPaymentMethod('QRIS')}
+                            variant={paymentMethod === 'BANK_TRANSFER' ? 'default' : 'outline'}
+                            onClick={() => setPaymentMethod('BANK_TRANSFER')}
                             className="flex flex-col h-auto py-2 gap-1"
                         >
                             <QrCode className="h-4 w-4" />
-                            <span className="text-xs">QRIS</span>
+                            <span className="text-xs">QRIS / Transfer</span>
                         </Button>
                     </div>
 

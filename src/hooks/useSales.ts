@@ -3,46 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/contexts/AppContext';
 
-export interface SalesOrder {
-    id: string;
-    company_id: string;
-    so_number: string;
-    so_date: string;
-    customer_id: string;
-    warehouse_id: string;
-    period_id: string;
-    subtotal: number;
-    discount_amount: number;
-    tax_amount: number;
-    total_amount: number;
-    status: 'draft' | 'approved' | 'sent' | 'in_delivery' | 'completed' | 'cancelled';
-    payment_terms: string;
-    due_date: string;
-    customer?: {
-        name: string;
-        email?: string;
-    };
-    lines?: SalesOrderLine[];
-}
-
-export interface SalesOrderLine {
-    id: string;
-    so_id: string;
-    product_variant_id: string;
-    qty_ordered: number;
-    qty_delivered: number;
-    qty_invoiced: number;
-    unit_price: number;
-    discount_percentage: number;
-    line_total: number;
-    product_variant?: {
-        sku: string;
-        product?: {
-            name: string;
-        };
-        attributes?: Record<string, any>;
-    };
-}
+import { SalesOrder, SalesOrderLine, CreateSOPayload, POSOrderPayload } from '@/types/sales';
 
 // Hook for fetching Sales Orders
 export const useSalesOrders = (companyId: string) => {
@@ -101,13 +62,7 @@ export const useCreateSalesOrder = () => {
     const { companyId } = useApp();
 
     return useMutation({
-        mutationFn: async (orderData: {
-            customer_id: string,
-            warehouse_id: string,
-            so_date: string,
-            items: { variant_id: string, qty: number, price: number, discount?: number }[],
-            notes?: string
-        }) => {
+        mutationFn: async (orderData: CreateSOPayload) => {
             // 1. Get Open Accounting Period
             const { data: period, error: periodError } = await supabase
                 .from('accounting_periods')
@@ -222,14 +177,7 @@ export const useSubmitPOSOrder = () => {
     const { userId, companyId } = useApp();
 
     return useMutation({
-        mutationFn: async (orderData: {
-            warehouse_id: string,
-            sale_date: string,
-            items: { variant_id: string, qty: number, price: number, discount?: number }[],
-            payment_method: 'CASH' | 'CARD' | 'QRIS' | 'TRANSFER',
-            amount_tendered?: number,
-            notes?: string
-        }) => {
+        mutationFn: async (orderData: POSOrderPayload) => {
             // 1. Get Open Accounting Period
             const { data: period, error: periodError } = await supabase
                 .from('accounting_periods')
