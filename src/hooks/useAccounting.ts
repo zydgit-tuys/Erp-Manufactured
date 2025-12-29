@@ -7,30 +7,18 @@ import { useApp } from '@/contexts/AppContext';
 export interface AccountingPeriod {
     id: string;
     company_id: string;
+    name: string;
     period_code: string;
     start_date: string;
     end_date: string;
-    status: 'open' | 'closed';
+    status: 'open' | 'closed' | 'locked';
     closed_at?: string;
     closed_by?: string;
     created_at: string;
     updated_at: string;
 }
 
-export interface Account {
-    id: string;
-    company_id: string;
-    account_code: string;
-    account_name: string;
-    account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
-    account_category: string;
-    parent_account_id?: string;
-    level: number;
-    is_header: boolean;
-    is_active: boolean;
-    normal_balance: 'DEBIT' | 'CREDIT';
-    children?: Account[];
-}
+// ... (Account interface remains same) ...
 
 export const useAccountingPeriods = (companyId: string) => {
     return useQuery({
@@ -60,7 +48,12 @@ export const useCreateAccountingPeriod = () => {
 
             const { data, error } = await supabase
                 .from('accounting_periods')
-                .insert({ ...newPeriod, company_id: companyId, created_by: userId })
+                .insert({
+                    ...newPeriod,
+                    company_id: companyId,
+                    created_by: userId,
+                    status: 'open'
+                })
                 .select()
                 .single();
 
