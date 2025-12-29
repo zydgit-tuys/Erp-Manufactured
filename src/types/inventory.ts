@@ -1,22 +1,22 @@
 // ==================== ENUMS ====================
 export type WipStage = 'CUT' | 'SEW' | 'FINISH';
 export type LedgerType = 'RAW' | 'WIP' | 'FG';
-export type TransactionType = 
-  | 'RECEIPT' 
-  | 'ISSUE' 
-  | 'ADJUSTMENT_IN' 
-  | 'ADJUSTMENT_OUT' 
-  | 'TRANSFER_IN' 
+export type TransactionType =
+  | 'RECEIPT'
+  | 'ISSUE'
+  | 'ADJUSTMENT_IN'
+  | 'ADJUSTMENT_OUT'
+  | 'TRANSFER_IN'
   | 'TRANSFER_OUT'
   | 'PRODUCTION_IN'
   | 'PRODUCTION_OUT'
   | 'SALES_OUT';
-export type AdjustmentReason = 
-  | 'STOCK_OPNAME' 
-  | 'DAMAGED' 
-  | 'EXPIRED' 
-  | 'THEFT' 
-  | 'CORRECTION' 
+export type AdjustmentReason =
+  | 'STOCK_OPNAME'
+  | 'DAMAGED'
+  | 'EXPIRED'
+  | 'THEFT'
+  | 'CORRECTION'
   | 'OTHER';
 
 // ==================== INVENTORY LEDGERS ====================
@@ -36,8 +36,6 @@ export interface RawMaterialLedger {
   qty_out: number;
   unit_cost: number;
   total_cost: number;
-  running_balance: number;
-  running_cost: number;
   notes?: string;
   created_by: string;
   created_at: string;
@@ -61,8 +59,6 @@ export interface WipLedger {
   labor_cost: number;
   overhead_cost: number;
   total_cost: number;
-  running_balance: number;
-  running_cost: number;
   notes?: string;
   created_by: string;
   created_at: string;
@@ -85,8 +81,6 @@ export interface FinishedGoodsLedger {
   qty_out: number;
   unit_cost: number;
   total_cost: number;
-  running_balance: number;
-  running_cost: number;
   notes?: string;
   created_by: string;
   created_at: string;

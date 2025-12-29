@@ -332,7 +332,7 @@ export default function WipLedger() {
                       {filteredLedger.map((entry: any) => (
                         <TableRow key={entry.id}>
                           <TableCell className="font-mono text-sm">
-                            {format(new Date(entry.journal_date), 'dd MMM yyyy')}
+                            {format(new Date(entry.transaction_date), 'dd MMM yyyy')}
                           </TableCell>
                           <TableCell>
                             <div>

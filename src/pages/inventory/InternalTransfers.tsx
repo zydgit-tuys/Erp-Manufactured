@@ -232,7 +232,7 @@ export default function InternalTransfers() {
                     >
                       <TableCell className="font-mono text-sm font-medium">{transfer.transfer_number}</TableCell>
                       <TableCell>{format(new Date(transfer.transfer_date), 'dd MMM yyyy')}</TableCell>
-                      <TableCell className="text-center">{getTypeBadge(transfer.transfer_type || 'RAW')}</TableCell>
+                      <TableCell className="text-center">{getTypeBadge(transfer.ledger_type || 'RAW')}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Warehouse className="h-3 w-3 text-muted-foreground" />

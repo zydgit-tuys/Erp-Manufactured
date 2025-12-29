@@ -250,7 +250,7 @@ export default function InventoryAdjustments() {
                     >
                       <TableCell className="font-mono text-sm font-medium">{adjustment.adjustment_number}</TableCell>
                       <TableCell>{format(new Date(adjustment.adjustment_date), 'dd MMM yyyy')}</TableCell>
-                      <TableCell className="text-center">{getTypeBadge(adjustment.adjustment_type || 'RAW')}</TableCell>
+                      <TableCell className="text-center">{getTypeBadge(adjustment.ledger_type || 'RAW')}</TableCell>
                       <TableCell className="text-center">{getReasonBadge(adjustment.reason)}</TableCell>
                       <TableCell className="text-center">{getStatusBadge(adjustment.status)}</TableCell>
                       <TableCell className="text-sm">{adjustment.created_by_user?.email || '-'}</TableCell>

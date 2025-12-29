@@ -172,7 +172,7 @@ export default function RawMaterialLedger() {
               <div className="text-2xl font-bold">
                 {ledger?.filter((l: any) => {
                   const today = new Date().toISOString().split('T')[0];
-                  return l.journal_date?.startsWith(today);
+                  return l.transaction_date?.startsWith(today);
                 }).length || 0}
               </div>
             </CardContent>
@@ -276,7 +276,6 @@ export default function RawMaterialLedger() {
                         <TableHead>Reference</TableHead>
                         <TableHead className="text-right">In</TableHead>
                         <TableHead className="text-right">Out</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
                         <TableHead className="text-right">Unit Cost</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -284,7 +283,7 @@ export default function RawMaterialLedger() {
                       {filteredLedger.map((entry: any) => (
                         <TableRow key={entry.id}>
                           <TableCell className="font-mono text-sm">
-                            {format(new Date(entry.journal_date), 'dd MMM yyyy')}
+                            {format(new Date(entry.transaction_date), 'dd MMM yyyy')}
                           </TableCell>
                           <TableCell>
                             <div>
@@ -300,7 +299,6 @@ export default function RawMaterialLedger() {
                           <TableCell className="text-right font-mono text-destructive">
                             {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
                           </TableCell>
-                          <TableCell className="text-right font-mono font-medium">{entry.balance_after}</TableCell>
                           <TableCell className="text-right">Rp {(entry.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
                         </TableRow>
                       ))}
