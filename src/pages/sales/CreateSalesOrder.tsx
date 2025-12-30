@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MathHelper } from '@/lib/math';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,13 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash, ArrowLeft, Loader2, Save } from 'lucide-react';
+import { Plus, Trash, ArrowLeft, Loader2, Save, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateSalesOrder } from '@/hooks/useSales';
-import { useCustomers, useProducts } from '@/hooks/useMasterData'; // Reusing existing hooks
+import { useCustomers, useProducts } from '@/hooks/useMasterData';
+import { useProductStocks } from '@/hooks/useInventory';
 import { useApp } from '@/contexts/AppContext';
-import { useInventory } from '@/hooks/useInventory';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CreateSalesOrder() {
     const navigate = useNavigate();
@@ -23,6 +25,7 @@ export default function CreateSalesOrder() {
     const { mutate: createSO, isPending: isSaving } = useCreateSalesOrder();
     const { data: customers } = useCustomers(companyId);
     const { data: products } = useProducts(companyId);
+    const { data: stocks } = useProductStocks(companyId);
 
     // Form State
     const [customerId, setCustomerId] = useState('');
@@ -50,23 +53,46 @@ export default function CreateSalesOrder() {
         setItems(newItems);
     };
 
-    const handleItemChange = (index: number, field: 'variantId' | 'qty' | 'price' | 'discount', value: any) => {
+    const handleItemChange = async (index: number, field: 'variantId' | 'qty' | 'price' | 'discount', value: any) => {
         const newItems = [...items];
+
         if (field === 'variantId') {
             const product = products?.find(p => p.variants.some(v => v.id === value));
             const variant = product?.variants.find(v => v.id === value);
+
             if (variant) {
-                newItems[index].price = variant.price; // Set default price
+                // Default to standard price
+                let finalPrice = variant.price;
+
+                // Smart Pricing: Check last sold price if customer is selected
+                if (customerId) {
+                    const { data: lastPriceData } = await supabase.rpc('get_last_sold_price', {
+                        p_customer_id: customerId,
+                        p_variant_id: value
+                    });
+
+                    if (lastPriceData && lastPriceData.length > 0) {
+                        finalPrice = lastPriceData[0].unit_price;
+                        toast({
+                            title: "Smart Pricing Applied",
+                            description: `Applied last sold price: Rp ${finalPrice.toLocaleString('id-ID')}`,
+                            duration: 2000
+                        });
+                    }
+                }
+
+                newItems[index].price = finalPrice;
             }
         }
+
         newItems[index] = { ...newItems[index], [field]: value };
         setItems(newItems);
     };
 
     const calculateTotal = () => {
         return items.reduce((sum, item) => {
-            const lineTotal = item.qty * item.price * (1 - (item.discount / 100));
-            return sum + lineTotal;
+            const lineTotal = MathHelper.calculateLineTotal(item.qty, item.price, item.discount);
+            return MathHelper.add(sum, lineTotal);
         }, 0);
     };
 
@@ -81,6 +107,21 @@ export default function CreateSalesOrder() {
         if (items.some(i => !i.variantId || i.qty <= 0)) {
             toast({ title: "Validation Error", description: "Please complete all line items with valid quantities", variant: "destructive" });
             return;
+        }
+
+        // Stock Validation Hook
+        const insufficientStock = items.filter(item => {
+            const stock = stocks?.find(s => s.product_variant_id === item.variantId)?.total_current_qty || 0;
+            return item.qty > stock;
+        });
+
+        if (insufficientStock.length > 0) {
+            // Warn but allow (backorder support)
+            toast({
+                title: "Stock Warning",
+                description: "Some items exceed available stock. Order will be created as backorder.",
+                variant: 'destructive' // Actually just warning
+            });
         }
 
         createSO({
@@ -103,11 +144,15 @@ export default function CreateSalesOrder() {
 
     // Flatten products for select options
     const variantOptions = products?.flatMap(p =>
-        p.variants.map(v => ({
-            id: v.id,
-            label: `${p.name} - ${v.sku} (${v.attributes?.color || ''} ${v.attributes?.size || ''})`,
-            price: v.price
-        }))
+        p.variants.map(v => {
+            const stock = stocks?.find(s => s.product_variant_id === v.id)?.total_current_qty || 0;
+            return {
+                id: v.id,
+                label: `${p.name} - ${v.sku} (${v.attributes?.color || ''} ${v.attributes?.size || ''})`,
+                price: v.price,
+                stock: stock
+            };
+        })
     ) || [];
 
     return (
@@ -221,7 +266,14 @@ export default function CreateSalesOrder() {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {variantOptions.map(v => (
-                                                    <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>
+                                                    <SelectItem key={v.id} value={v.id}>
+                                                        <div className="flex justify-between w-full gap-4">
+                                                            <span>{v.label}</span>
+                                                            <span className={`text-xs ${v.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                                {v.stock > 0 ? `${v.stock} avail` : 'Out of Stock'}
+                                                            </span>
+                                                        </div>
+                                                    </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -237,12 +289,17 @@ export default function CreateSalesOrder() {
                                     </div>
                                     <div className="grid gap-2 w-32">
                                         <Label className={index > 0 ? 'sr-only' : ''}>Price</Label>
-                                        <Input
-                                            type="number"
-                                            min="0"
-                                            value={item.price}
-                                            onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                value={item.price}
+                                                disabled
+                                                className="bg-muted pr-8"
+                                                readOnly
+                                            />
+                                            {customerId && <History className="h-3 w-3 absolute right-2 top-3 text-muted-foreground opacity-50" />}
+                                        </div>
                                     </div>
                                     <div className="grid gap-2 w-20">
                                         <Label className={index > 0 ? 'sr-only' : ''}>Disc %</Label>
@@ -257,7 +314,7 @@ export default function CreateSalesOrder() {
                                     <div className="grid gap-2 w-32">
                                         <Label className={index > 0 ? 'sr-only' : ''}>Total</Label>
                                         <div className="h-10 flex items-center px-3 border rounded-md bg-muted font-mono text-sm">
-                                            {(item.qty * item.price * (1 - item.discount / 100)).toLocaleString('id-ID')}
+                                            {MathHelper.calculateLineTotal(item.qty, item.price, item.discount).toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                     <Button

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/utils/errorHandler';
 import { useApp } from '@/contexts/AppContext';
 
 import { BOMHeader, ProductionOrder } from '@/types/production';
@@ -44,6 +45,36 @@ export const useBOMs = (companyId: string) => {
             return data as BOMHeader[];
         },
         enabled: !!companyId,
+    });
+};
+
+export const useBOM = (id: string) => {
+    return useQuery({
+        queryKey: ['bom', id],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('bom_headers')
+                .select(`
+                    *,
+                    product:products(code, name),
+                    lines:bom_lines(
+                        id,
+                        material_id,
+                        qty_per,
+                        uom,
+                        scrap_percentage,
+                        stage,
+                        notes,
+                        material:materials(code, name)
+                    )
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return data as BOMHeader & { lines: any[] };
+        },
+        enabled: !!id,
     });
 };
 
@@ -292,6 +323,74 @@ export const useCreateProductionOrder = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['production_orders'] });
             toast({ title: "Work Order Created", description: "Production order has been planned." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    });
+};
+
+export const useProductionOrder = (id: string) => {
+    return useQuery({
+        queryKey: ['production_order', id],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('production_orders')
+                .select(`
+                    *,
+                    product:products(code, name, unit_of_measure),
+                    warehouse:warehouses(name),
+                    bom:bom_headers(version)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return data as ProductionOrder & { product: any, warehouse: any, bom: any };
+        },
+        enabled: !!id,
+    });
+};
+
+export const useReleaseProductionOrder = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.rpc('release_production_order', { p_po_id: id });
+            if (error) throw error;
+        },
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: ['production_order', id] });
+            queryClient.invalidateQueries({ queryKey: ['production_orders'] });
+            toast({ title: "Work Order Released", description: "Stock has been reserved." });
+        },
+        onError: (err) => {
+            toast({ variant: "destructive", title: "Release Failed", description: handleSupabaseError(err) });
+        }
+    });
+};
+
+export const useRecordOutput = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { userId } = useApp();
+
+    return useMutation({
+        mutationFn: async ({ id, qty }: { id: string, qty: number }) => {
+            const { error } = await supabase.rpc('record_production_output', {
+                p_production_order_id: id,
+                p_qty_output: qty,
+                p_user_id: userId
+            });
+
+            if (error) throw error;
+        },
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: ['production_order', id] });
+            queryClient.invalidateQueries({ queryKey: ['production_orders'] });
+            toast({ title: "Output Recorded", description: "Finished goods added to inventory." });
         },
         onError: (err) => {
             toast({ variant: "destructive", title: "Error", description: err.message });

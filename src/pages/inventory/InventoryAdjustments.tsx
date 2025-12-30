@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { LEDGER_TYPE } from '@/types/enums';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -69,11 +70,11 @@ export default function InventoryAdjustments() {
 
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'RAW':
+      case LEDGER_TYPE.RAW:
         return <Badge className="bg-info/10 text-info border-info/20">Raw Material</Badge>;
-      case 'WIP':
+      case LEDGER_TYPE.WIP:
         return <Badge className="bg-warning/10 text-warning border-warning/20">WIP</Badge>;
-      case 'FG':
+      case LEDGER_TYPE.FG:
         return <Badge className="bg-success/10 text-success border-success/20">Finished Goods</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;

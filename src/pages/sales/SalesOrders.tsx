@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { SALES_ORDER_STATUS } from '@/types/enums';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,9 +13,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Plus, Search, Eye, ShoppingBag } from 'lucide-react';
+import { Plus, Search, Eye, ShoppingBag, Zap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useSalesOrders } from '@/hooks/useSales';
+import { useSalesOrders, useQuickFulfill } from '@/hooks/useSales';
 import { useApp } from '@/contexts/AppContext';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
@@ -27,6 +28,7 @@ export default function SalesOrders() {
     const { companyId } = useApp();
 
     const { data: orders, isLoading, error, refetch } = useSalesOrders(companyId);
+    const { mutate: quickFulfill, isPending: isFulfilling } = useQuickFulfill();
 
     const filteredOrders = orders?.filter(
         (order) =>
@@ -36,11 +38,11 @@ export default function SalesOrders() {
 
     const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
         switch (status) {
-            case 'completed': return 'success';
-            case 'approved': return 'default'; // Or blue
-            case 'in_delivery': return 'warning';
-            case 'sent': return 'secondary';
-            case 'cancelled': return 'destructive';
+            case SALES_ORDER_STATUS.COMPLETED: return 'success';
+            case SALES_ORDER_STATUS.APPROVED: return 'default'; // Or blue
+            case SALES_ORDER_STATUS.IN_DELIVERY: return 'warning';
+            case SALES_ORDER_STATUS.SENT: return 'secondary';
+            case SALES_ORDER_STATUS.CANCELLED: return 'destructive';
             default: return 'outline'; // draft
         }
     };
@@ -150,6 +152,23 @@ export default function SalesOrders() {
                                                     <Eye className="h-4 w-4 mr-2" />
                                                     View
                                                 </Button>
+                                                {order.status === 'approved' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                        disabled={isFulfilling}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (confirm('Quick Fulfill: Create Delivery Note and Invoice?')) {
+                                                                quickFulfill(order.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isFulfilling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+                                                        Ship & Invoice
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

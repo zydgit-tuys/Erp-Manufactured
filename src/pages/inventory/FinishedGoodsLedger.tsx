@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TableVirtuoso } from 'react-virtuoso';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -262,43 +263,49 @@ export default function FinishedGoodsLedger() {
                     description="No finished goods transactions found matching your criteria"
                   />
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
+                  <TableVirtuoso
+                    style={{ height: 600 }}
+                    data={filteredLedger}
+                    components={{
+                      Table: (props) => <Table {...props} />,
+                      TableHead: (props) => <TableHeader {...props} />,
+                      TableRow: (props) => <TableRow {...props} />,
+                      TableBody: (props) => <TableBody {...props} />,
+                    }}
+                    fixedHeaderContent={() => (
+                      <TableRow className="bg-card hover:bg-card">
+                        <TableHead className="w-[120px]">Date</TableHead>
                         <TableHead>Product / SKU</TableHead>
-                        <TableHead className="text-center">Type</TableHead>
-                        <TableHead>Reference</TableHead>
-                        <TableHead className="text-right">In</TableHead>
-                        <TableHead className="text-right">Out</TableHead>
-                        <TableHead className="text-right">Unit Cost</TableHead>
+                        <TableHead className="text-center w-[120px]">Type</TableHead>
+                        <TableHead className="w-[150px]">Reference</TableHead>
+                        <TableHead className="text-right w-[100px]">In</TableHead>
+                        <TableHead className="text-right w-[100px]">Out</TableHead>
+                        <TableHead className="text-right w-[150px]">Unit Cost</TableHead>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLedger.map((entry: any) => (
-                        <TableRow key={entry.id}>
-                          <TableCell className="font-mono text-sm">
-                            {format(new Date(entry.transaction_date), 'dd MMM yyyy')}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{entry.product?.name}</div>
-                              <div className="text-xs text-muted-foreground">{entry.sku}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">{getTransactionBadge(entry.transaction_type)}</TableCell>
-                          <TableCell className="font-mono text-sm">{entry.reference_id}</TableCell>
-                          <TableCell className="text-right font-mono text-success">
-                            {entry.qty_in > 0 ? `+${entry.qty_in}` : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-destructive">
-                            {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
-                          </TableCell>
-                          <TableCell className="text-right">Rp {(entry.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                    )}
+                    itemContent={(index, entry: any) => (
+                      <>
+                        <TableCell className="font-mono text-sm">
+                          {format(new Date(entry.transaction_date), 'dd MMM yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{entry.product?.name}</div>
+                            <div className="text-xs text-muted-foreground">{entry.sku}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{getTransactionBadge(entry.transaction_type)}</TableCell>
+                        <TableCell className="font-mono text-sm">{entry.reference_id}</TableCell>
+                        <TableCell className="text-right font-mono text-success">
+                          {entry.qty_in > 0 ? `+${entry.qty_in}` : '-'}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-destructive">
+                          {entry.qty_out > 0 ? `-${entry.qty_out}` : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">Rp {(entry.unit_cost || 0).toLocaleString('id-ID')}</TableCell>
+                      </>
+                    )}
+                  />
                 )}
               </CardContent>
             </Card>

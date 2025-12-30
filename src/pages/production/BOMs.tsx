@@ -85,7 +85,7 @@ export default function BOMs() {
                                 </TableHeader>
                                 <TableBody>
                                     {boms.map((bom) => (
-                                        <TableRow key={bom.id} className="cursor-pointer hover:bg-muted/50">
+                                        <TableRow key={bom.id} className="cursor-pointer hover:bg-muted/50" onClick={() => window.location.href = `/production/boms/${bom.id}`}>
                                             <TableCell className="font-mono">{bom.product?.code}</TableCell>
                                             <TableCell>{bom.product?.name}</TableCell>
                                             <TableCell><Badge variant="outline">{bom.version}</Badge></TableCell>
@@ -97,7 +97,10 @@ export default function BOMs() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm">View</Button>
+                                                <Button variant="ghost" size="sm" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.location.href = `/production/boms/${bom.id}`;
+                                                }}>View</Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}

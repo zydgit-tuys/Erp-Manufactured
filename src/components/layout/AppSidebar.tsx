@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   Wallet,
   Database,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -54,7 +55,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-const navigationSections: NavSection[] = [
+export const navigationSections: NavSection[] = [
   {
     title: 'Dashboard',
     items: [
@@ -136,12 +137,20 @@ const navigationSections: NavSection[] = [
     ]
   },
   {
+    title: 'Reports',
+    icon: TrendingUp,
+    items: [
+      { title: 'Margin Analysis', href: '/reports/margin', icon: BarChart3 },
+    ]
+  },
+  {
     title: 'System',
     icon: Settings,
     items: [
       { title: 'Analytics', href: '/analytics', icon: BarChart3, module: 'analytics' },
       { title: 'Marketplace', href: '/marketplace', icon: ShoppingCart, module: 'marketplace' },
       { title: 'Settings', href: '/settings', icon: Settings },
+      { title: 'Team', href: '/settings/team', icon: Users },
     ]
   },
 ];
@@ -185,7 +194,7 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'flex h-screen flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300',
+          'hidden md:flex h-screen flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300',
           collapsed ? 'w-16' : 'w-64'
         )}
       >

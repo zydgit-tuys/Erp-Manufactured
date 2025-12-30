@@ -9,9 +9,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User, Moon, Sun } from 'lucide-react';
+import { LogOut, User, Moon, Sun, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
+import { MobileNav } from './MobileNav';
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -25,24 +26,46 @@ export function AppHeader() {
 
   const userInitials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase()
     : user?.email?.[0]?.toUpperCase() || 'U';
 
   return (
-    <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">
-          Ziyada Sport ERP
-        </h1>
-        <p className="text-xs text-muted-foreground">
-          Enterprise Resource Planning
-        </p>
+    <header className="h-16 border-b border-border bg-card px-4 md:px-6 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <MobileNav />
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">
+            Ziyada Sport ERP
+          </h1>
+          <p className="text-xs text-muted-foreground hidden md:block">
+            Enterprise Resource Planning
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden md:flex items-center gap-2 text-muted-foreground w-64 justify-start bg-muted/50 border-muted"
+          onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+        >
+          <span className="flex-1 text-left">Search...</span>
+          <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+        >
+          <Search className="h-5 w-5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

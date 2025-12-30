@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/utils/errorHandler';
 import { useApp } from '@/contexts/AppContext';
 
 import {
@@ -129,7 +130,7 @@ export const useCreatePurchaseOrder = () => {
             toast({
                 variant: 'destructive',
                 title: 'Failed to create PO',
-                description: error.message,
+                description: handleSupabaseError(error),
             });
         },
     });
@@ -239,7 +240,7 @@ export const useCreateGRN = () => {
             toast({
                 variant: 'destructive',
                 title: 'Failed to create GRN',
-                description: error.message,
+                description: handleSupabaseError(error),
             });
         },
     });
@@ -272,9 +273,25 @@ export const usePostGRN = () => {
             toast({
                 variant: 'destructive',
                 title: 'Failed to post GRN',
-                description: error.message,
+                description: handleSupabaseError(error),
             });
         },
     });
 };
 
+// ==================== AUTOMATION HOOKS ====================
+
+export function useLastPurchasePrice(variantId?: string) {
+    return useQuery({
+        queryKey: ['last-purchase-price', variantId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .rpc('get_last_purchase_price', { p_variant_id: variantId });
+
+            if (error) throw error;
+            // RPC returns an array, we want the first (latest)
+            return data && data.length > 0 ? data[0] : null;
+        },
+        enabled: !!variantId,
+    });
+}

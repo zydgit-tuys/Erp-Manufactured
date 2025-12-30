@@ -3,84 +3,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/contexts/AppContext';
+import { Product, ProductVariant } from '@/types/product';
+import { Vendor, Customer } from '@/types/partner';
+import { Warehouse, Bin } from '@/types/inventory';
+// Wait, customer interface was in useMasterData.ts. Let's inspect src/types/sales.ts again in previous turn. 
+// It had inline Customer type inside SalesOrder? No, it had `customer?: { name, email }`.
+// We need a shared Customer/Vendor type. 
+// I should create `src/types/party.ts` or add to `company.ts`? Or `sales.ts`/`purchasing.ts`.
+// For now, I will keep Vendor/Customer interfaces if they are not exported elsewhere, OR better:
+// Create `src/types/masterData.ts`?
+// Let's look at `src/types/purchasing.ts`. It has `vendor?: { name, code }`.
+// I will keep the interfaces here BUT rename them or move them? 
+// Actually, `Product` IS in `src/types/product.ts`.
+// `Warehouse` is in `src/hooks/useMasterData.ts`. It should be in `inventory.ts`.
+// Let's fixing imports first.
 
-export interface ProductVariant {
-    id: string;
-    product_id: string;
-    sku: string;
-    size?: string;
-    color?: string;
-    material?: string;
-    price: number;
-    cost_price: number;
-    current_qty: number;
-    attributes?: any;
-    is_active: boolean;
-}
 
-export interface Product {
-    id: string;
-    company_id: string;
-    code: string;
-    name: string;
-    description: string;
-    category: string;
-    unit_of_measure: string;
-    selling_price: number;
-    standard_cost?: number;
-    barcode?: string;
-    notes?: string;
-    image_url?: string;
-    status: 'active' | 'inactive';
-    created_by: string;
-    updated_by?: string;
-    created_at: string;
-    updated_at?: string;
-    variants: ProductVariant[];
-}
-
-export interface Vendor {
-    id: string;
-    company_id: string;
-    code: string;
-    name: string;
-    contact_person?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    tax_id?: string;
-    payment_terms: 'COD' | 'NET_7' | 'NET_14' | 'NET_30' | 'NET_60' | 'CUSTOM';
-    custom_payment_days?: number;
-    credit_limit: number;
-    status: 'active' | 'inactive' | 'blocked';
-    notes?: string;
-    created_at: string;
-    updated_at?: string;
-}
-
-export interface Customer {
-    id: string;
-    company_id: string;
-    code: string;
-    name: string;
-    contact_person?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    tax_id?: string;
-    payment_terms: 'COD' | 'NET_7' | 'NET_14' | 'NET_30' | 'NET_60' | 'CUSTOM';
-    custom_payment_days?: number;
-    credit_limit: number;
-    credit_hold: boolean;
-    status: 'active' | 'inactive' | 'blocked';
-    customer_type?: string;
-    discount_percentage: number;
-    notes?: string;
-    created_at: string;
-    updated_at?: string;
-}
 
 export const useProducts = (companyId: string) => {
     return useQuery({
@@ -700,20 +638,7 @@ export const useDeleteCustomer = () => {
     });
 };
 
-export interface Warehouse {
-    id: string;
-    company_id: string;
-    code: string;
-    name: string;
-    address?: string;
-    city?: string;
-    manager_name?: string;
-    phone?: string;
-    description?: string;
-    is_active: boolean;
-    created_by: string;
-    created_at: string;
-}
+// ==================== WAREHOUSES & BINS ====================
 
 export const useWarehouses = (companyId: string) => {
     return useQuery({
@@ -724,6 +649,7 @@ export const useWarehouses = (companyId: string) => {
                 .select('*')
                 .eq('company_id', companyId)
                 .order('name');
+
             if (error) throw error;
             return data as Warehouse[];
         },
@@ -841,14 +767,6 @@ export const useDeleteWarehouse = () => {
 
 
 
-export interface Bin {
-    id: string;
-    warehouse_id: string;
-    code: string;
-    name: string;
-    description?: string;
-    is_active: boolean;
-}
 
 export const useCreateBin = () => {
     const queryClient = useQueryClient();

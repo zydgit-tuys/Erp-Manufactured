@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/utils/errorHandler';
 import { useApp } from '@/contexts/AppContext';
 
 import { SalesOrder, SalesOrderLine, CreateSOPayload, POSOrderPayload } from '@/types/sales';
@@ -126,7 +127,7 @@ export const useCreateSalesOrder = () => {
         onError: (error) => {
             toast({
                 title: 'Failed to create order',
-                description: error.message,
+                description: handleSupabaseError(error),
                 variant: 'destructive',
             });
         },
@@ -163,7 +164,7 @@ export const useApproveSalesOrder = () => {
         onError: (error) => {
             toast({
                 title: 'Approval Failed',
-                description: error.message,
+                description: handleSupabaseError(error),
                 variant: 'destructive',
             });
         }
@@ -253,10 +254,65 @@ export const useSubmitPOSOrder = () => {
         onError: (error) => {
             toast({
                 title: 'Transaction Failed',
-                description: error.message,
+                description: handleSupabaseError(error),
                 variant: 'destructive',
             });
         }
     });
 };
 
+
+// ==================== AUTOMATION HOOKS ====================
+
+export function useLastSoldPrice(customerId?: string, variantId?: string) {
+    return useQuery({
+        queryKey: ['last-sold-price', customerId, variantId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .rpc('get_last_sold_price', {
+                    p_customer_id: customerId,
+                    p_variant_id: variantId
+                });
+
+            if (error) throw error;
+            // RPC returns an array, we want the first (latest)
+            return data && data.length > 0 ? data[0] : null;
+        },
+        enabled: !!customerId && !!variantId,
+    });
+}
+
+export function useQuickFulfill() {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const { userId } = useApp();
+
+    return useMutation({
+        mutationFn: async (soId: string) => {
+            const { data, error } = await supabase.rpc('quick_fulfill_so', {
+                p_so_id: soId,
+                p_user_id: userId
+            });
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['sales-order'] });
+            queryClient.invalidateQueries({ queryKey: ['fg-balances'] });
+
+            toast({
+                title: 'Quick Fulfillment Complete',
+                description: `Created DO ${data.do_number} and Invoice ${data.invoice_number}`,
+            });
+        },
+        onError: (error) => {
+            toast({
+                title: 'Fulfillment Failed',
+                description: handleSupabaseError(error),
+                variant: 'destructive',
+            });
+        }
+    });
+}

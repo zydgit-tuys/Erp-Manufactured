@@ -321,13 +321,16 @@ export async function postAdjustment(
   });
 }
 
-export async function getAdjustments(companyId: string): Promise<InventoryAdjustment[]> {
-  const { data, error } = await supabase
+export async function getAdjustments(companyId: string, status?: 'draft' | 'posted' | 'cancelled'): Promise<InventoryAdjustment[]> {
+  let query = supabase
     .from('inventory_adjustments')
     .select('*')
     .eq('company_id', companyId)
     .order('adjustment_date', { ascending: false });
 
+  if (status) query = query.eq('status', status);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -370,13 +373,30 @@ export async function postTransfer(
   });
 }
 
-export async function getTransfers(companyId: string): Promise<InternalTransfer[]> {
-  const { data, error } = await supabase
+export async function getTransfers(companyId: string, status?: 'draft' | 'posted' | 'cancelled'): Promise<InternalTransfer[]> {
+  let query = supabase
     .from('internal_transfers')
     .select('*')
     .eq('company_id', companyId)
     .order('transfer_date', { ascending: false });
 
+  if (status) query = query.eq('status', status);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
+}
+
+export async function getTransferById(id: string): Promise<InternalTransfer> {
+  const { data, error } = await supabase
+    .from('internal_transfers')
+    .select(`
+      *,
+      lines:internal_transfer_lines(*)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data;
 }

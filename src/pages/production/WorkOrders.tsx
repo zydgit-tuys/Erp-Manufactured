@@ -10,6 +10,7 @@ import { useAccountingPeriods } from '@/hooks/useAccounting';
 import { Plus, ClipboardCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { PRODUCTION_STATUS } from '@/types/enums';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { ErrorState } from '@/components/ui/error-state';
@@ -164,18 +165,21 @@ export default function WorkOrders() {
                                 </TableHeader>
                                 <TableBody>
                                     {workOrders.map((wo) => (
-                                        <TableRow key={wo.id} className="cursor-pointer hover:bg-muted/50">
+                                        <TableRow key={wo.id} className="cursor-pointer hover:bg-muted/50" onClick={() => window.location.href = `/production/work-orders/${wo.id}`}>
                                             <TableCell className="font-mono">{wo.po_number}</TableCell>
                                             <TableCell>{wo.product?.name}</TableCell>
                                             <TableCell>{wo.qty_planned}</TableCell>
                                             <TableCell>
-                                                <Badge variant={wo.status === 'completed' ? 'default' : wo.status === 'in_progress' ? 'secondary' : 'outline'}>
+                                                <Badge variant={wo.status === PRODUCTION_STATUS.COMPLETED ? 'default' : wo.status === PRODUCTION_STATUS.IN_PROGRESS ? 'secondary' : 'outline'}>
                                                     {wo.status.replace('_', ' ').toUpperCase()}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>{new Date(wo.due_date || '').toLocaleDateString()}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm">View</Button>
+                                                <Button variant="ghost" size="sm" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.location.href = `/production/work-orders/${wo.id}`;
+                                                }}>View</Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}

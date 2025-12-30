@@ -16,4 +16,14 @@ export interface Material {
     notes?: string;
     created_at: string;
     updated_at: string;
+
+    category?: MaterialCategory;
+}
+
+export interface MaterialCategory {
+    id: string;
+    company_id: string;
+    name: string;
+    description?: string;
+    created_at: string;
 }

@@ -37,24 +37,24 @@ ON CONFLICT DO NOTHING;
 
 -- 5. Vendors
 INSERT INTO vendors (company_id, code, name, contact_person, phone, email, payment_terms, status) VALUES
-((SELECT id FROM companies LIMIT 1), 'VEN-001', 'PT Fabric Supplier', 'John Doe', '08123456789', 'vendor1@example.com', 'NET 30', 'active'),
-((SELECT id FROM companies LIMIT 1), 'VEN-002', 'CV Thread Supplier', 'Jane Smith', '08123456790', 'vendor2@example.com', 'NET 30', 'active')
+((SELECT id FROM companies LIMIT 1), 'VEN-001', 'PT Fabric Supplier', 'John Doe', '08123456789', 'vendor1@example.com', 'NET_30', 'active'),
+((SELECT id FROM companies LIMIT 1), 'VEN-002', 'CV Thread Supplier', 'Jane Smith', '08123456790', 'vendor2@example.com', 'NET_30', 'active')
 ON CONFLICT DO NOTHING;
 
 -- 6. Customers
 INSERT INTO customers (company_id, code, name, contact_person, phone, email, credit_limit, payment_terms, status) VALUES
-((SELECT id FROM companies LIMIT 1), 'CUS-001', 'Toko Retail ABC', 'Alice Brown', '08123456791', 'customer1@example.com', 10000000, 'NET 30', 'active'),
-((SELECT id FROM companies LIMIT 1), 'CUS-002', 'Toko Retail XYZ', 'Bob Wilson', '08123456792', 'customer2@example.com', 5000000, 'NET 15', 'active')
+((SELECT id FROM companies LIMIT 1), 'CUS-001', 'Toko Retail ABC', 'Alice Brown', '08123456791', 'customer1@example.com', 10000000, 'NET_30', 'active'),
+((SELECT id FROM companies LIMIT 1), 'CUS-002', 'Toko Retail XYZ', 'Bob Wilson', '08123456792', 'customer2@example.com', 5000000, 'NET_14', 'active')
 ON CONFLICT DO NOTHING;
 
 -- 7. Warehouses
-INSERT INTO warehouses (company_id, code, name, location, is_active) VALUES
-((SELECT id FROM companies LIMIT 1), 'WH-MAIN', 'Main Warehouse', 'Jakarta', true),
-((SELECT id FROM companies LIMIT 1), 'WH-RETAIL', 'Retail Store', 'Jakarta', true)
+INSERT INTO warehouses (company_id, code, name, address, city, is_active) VALUES
+((SELECT id FROM companies LIMIT 1), 'WH-MAIN', 'Main Warehouse', 'Jakarta', 'Jakarta', true),
+((SELECT id FROM companies LIMIT 1), 'WH-RETAIL', 'Retail Store', 'Jakarta', 'Jakarta', true)
 ON CONFLICT DO NOTHING;
 
 -- 8. Warehouse Bins
-INSERT INTO warehouse_bins (warehouse_id, code, name, is_active) VALUES
+INSERT INTO bins (warehouse_id, code, name, is_active) VALUES
 ((SELECT id FROM warehouses WHERE code = 'WH-MAIN' LIMIT 1), 'A-01', 'Bin A-01', true),
 ((SELECT id FROM warehouses WHERE code = 'WH-MAIN' LIMIT 1), 'A-02', 'Bin A-02', true),
 ((SELECT id FROM warehouses WHERE code = 'WH-MAIN' LIMIT 1), 'FG-01', 'Finished Goods 01', true),
@@ -79,8 +79,8 @@ ON CONFLICT DO NOTHING;
 
 -- 11. Accounting Period
 INSERT INTO accounting_periods (company_id, name, period_code, start_date, end_date, fiscal_year, status) VALUES
-((SELECT id FROM companies LIMIT 1), 'January 2025', 'JAN-2025', '2025-01-01', '2025-01-31', 2025, 'open'),
-((SELECT id FROM companies LIMIT 1), 'February 2025', 'FEB-2025', '2025-02-01', '2025-02-28', 2025, 'open')
+((SELECT id FROM companies LIMIT 1), 'January 2025', '2025-01', '2025-01-01', '2025-01-31', 2025, 'open'),
+((SELECT id FROM companies LIMIT 1), 'February 2025', '2025-02', '2025-02-01', '2025-02-28', 2025, 'open')
 ON CONFLICT DO NOTHING;
 
 -- ==================== SUCCESS MESSAGE ====================

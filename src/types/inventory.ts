@@ -19,6 +19,32 @@ export type AdjustmentReason =
   | 'CORRECTION'
   | 'OTHER';
 
+// ==================== MASTER DATA ====================
+export interface Warehouse {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  address?: string;
+  city?: string;
+  manager_name?: string;
+  phone?: string;
+  description?: string;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface Bin {
+  id: string;
+  warehouse_id: string;
+  code: string;
+  name: string;
+  capacity?: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 // ==================== INVENTORY LEDGERS ====================
 export interface RawMaterialLedger {
   id: string;

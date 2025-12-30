@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/utils/errorHandler';
 import * as inventoryService from '@/services/inventory.service';
-import type { 
-  RawMaterialLedgerInsert, 
-  WipLedgerInsert, 
+import type {
+  RawMaterialLedgerInsert,
+  WipLedgerInsert,
   FinishedGoodsLedgerInsert,
   InventoryAdjustmentInsert,
   InventoryAdjustmentLineInsert,
@@ -48,7 +50,7 @@ export function useReceiveRawMaterial() {
       toast({ title: 'Material received successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to receive material', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to receive material', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -66,7 +68,7 @@ export function useIssueRawMaterial() {
       toast({ title: 'Material issued successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to issue material', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to issue material', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -101,14 +103,14 @@ export function useRecordWipIn() {
 
   return useMutation({
     mutationFn: (data: Omit<WipLedgerInsert, 'transaction_type' | 'qty_out'>) =>
-      inventoryService.recordWipIn(data),
+      inventoryService.recordWipIn({ ...data, transaction_type: 'PRODUCTION_IN' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wip-ledger'] });
       queryClient.invalidateQueries({ queryKey: ['wip-balances'] });
       toast({ title: 'WIP recorded successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to record WIP', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to record WIP', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -119,14 +121,14 @@ export function useRecordWipOut() {
 
   return useMutation({
     mutationFn: (data: Omit<WipLedgerInsert, 'transaction_type' | 'qty_in'>) =>
-      inventoryService.recordWipOut(data),
+      inventoryService.recordWipOut({ ...data, transaction_type: 'PRODUCTION_OUT' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wip-ledger'] });
       queryClient.invalidateQueries({ queryKey: ['wip-balances'] });
       toast({ title: 'WIP output recorded successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to record WIP output', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to record WIP output', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -168,7 +170,7 @@ export function useReceiveFinishedGoods() {
       toast({ title: 'Finished goods received successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to receive finished goods', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to receive finished goods', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -186,7 +188,7 @@ export function useIssueFinishedGoods() {
       toast({ title: 'Finished goods issued successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to issue finished goods', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to issue finished goods', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -213,7 +215,7 @@ export function useCreateAdjustment() {
       toast({ title: 'Adjustment created successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create adjustment', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to create adjustment', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -236,7 +238,7 @@ export function usePostAdjustment() {
       toast({ title: 'Adjustment posted successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to post adjustment', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to post adjustment', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -251,19 +253,45 @@ export function useInternalTransfers(companyId: string, status?: 'draft' | 'post
   });
 }
 
+export function useInternalTransfer(id: string) {
+  return useQuery({
+    queryKey: ['transfer', id],
+    queryFn: () => inventoryService.getTransferById(id),
+    enabled: !!id,
+  });
+}
+
 export function useCreateTransfer() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ data, lines }: { data: InternalTransferInsert; lines: InternalTransferLineInsert[] }) =>
-      inventoryService.createTransfer(data, lines),
+    mutationFn: async ({ data, lines }: { data: InternalTransferInsert; lines: InternalTransferLineInsert[] }) => {
+      // Find open period if not provided
+      if (!data.period_id || data.period_id === '00000000-0000-0000-0000-000000000000') {
+        const { data: period, error: periodError } = await supabase
+          .from('accounting_periods')
+          .select('id')
+          .eq('company_id', data.company_id)
+          .lte('start_date', data.transfer_date)
+          .gte('end_date', data.transfer_date)
+          .eq('status', 'open')
+          .single();
+
+        if (periodError || !period) {
+          throw new Error(`No open accounting period found for date ${data.transfer_date}`);
+        }
+        data.period_id = period.id;
+      }
+
+      return inventoryService.createTransfer(data, lines);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transfers'] });
       toast({ title: 'Transfer created successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create transfer', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to create transfer', description: handleSupabaseError(error), variant: 'destructive' });
     },
   });
 }
@@ -284,7 +312,56 @@ export function usePostTransfer() {
       toast({ title: 'Transfer posted successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to post transfer', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to post transfer', description: handleSupabaseError(error), variant: 'destructive' });
     },
+  });
+}
+
+// ==================== AUTOMATION HOOKS ====================
+
+export interface LowStockAlert {
+  variant_id: string;
+  company_id: string;
+  product_name: string;
+  sku: string;
+  procurement_method: 'buy' | 'make' | 'both';
+  reorder_point: number;
+  reorder_qty: number;
+  current_stock: number;
+  preferred_vendor_id?: string;
+  vendor_name?: string;
+  unit_of_measure: string;
+}
+
+export function useLowStockAlerts(companyId: string) {
+  return useQuery({
+    queryKey: ['low-stock-alerts', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('low_stock_alerts_vw')
+        .select('*')
+        .eq('company_id', companyId);
+
+      if (error) throw error;
+      return data as LowStockAlert[];
+    },
+    enabled: !!companyId,
+  });
+}
+
+// Hook to fetch product stock summary (company wide)
+export function useProductStocks(companyId: string) {
+  return useQuery({
+    queryKey: ['product-stocks', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('finished_goods_summary_mv')
+        .select('product_variant_id, total_current_qty')
+        .eq('company_id', companyId);
+
+      if (error) throw error;
+      return data as { product_variant_id: string; total_current_qty: number }[];
+    },
+    enabled: !!companyId
   });
 }

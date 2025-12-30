@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { PURCHASE_ORDER_STATUS } from '@/types/enums';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { POStatus } from '@/types/purchasing';
 import {
     Table,
     TableBody,
@@ -36,12 +38,12 @@ export default function PurchaseOrders() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'draft': return 'secondary';
-            case 'submitted': return 'default';
-            case 'approved': return 'default'; // blue-ish usually
-            case 'partial': return 'warning';
-            case 'closed': return 'success';
-            case 'cancelled': return 'destructive';
+            case PURCHASE_ORDER_STATUS.DRAFT: return 'secondary';
+            case PURCHASE_ORDER_STATUS.SUBMITTED: return 'default';
+            case PURCHASE_ORDER_STATUS.APPROVED: return 'default'; // blue-ish usually
+            case PURCHASE_ORDER_STATUS.PARTIAL: return 'warning';
+            case PURCHASE_ORDER_STATUS.CLOSED: return 'success';
+            case PURCHASE_ORDER_STATUS.CANCELLED: return 'destructive';
             default: return 'outline';
         }
     };
@@ -93,7 +95,12 @@ export default function PurchaseOrders() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-blue-600">
-                                {orders?.filter(o => ['draft', 'submitted', 'approved', 'partial'].includes(o.status)).length || 0}
+                                {orders?.filter(o => ([
+                                    PURCHASE_ORDER_STATUS.DRAFT,
+                                    PURCHASE_ORDER_STATUS.SUBMITTED,
+                                    PURCHASE_ORDER_STATUS.APPROVED,
+                                    PURCHASE_ORDER_STATUS.PARTIAL
+                                ] as POStatus[]).includes(o.status)).length || 0}
                             </div>
                         </CardContent>
                     </Card>
@@ -105,7 +112,7 @@ export default function PurchaseOrders() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-green-600">
-                                {orders?.filter(o => o.status === 'closed').length || 0}
+                                {orders?.filter(o => o.status === PURCHASE_ORDER_STATUS.CLOSED).length || 0}
                             </div>
                         </CardContent>
                     </Card>

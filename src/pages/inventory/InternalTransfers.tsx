@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { LEDGER_TYPE, TRANSACTION_TYPE } from '@/types/enums';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -58,9 +59,9 @@ export default function InternalTransfers() {
 
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'RAW':
+      case LEDGER_TYPE.RAW:
         return <Badge className="bg-info/10 text-info border-info/20">Raw Material</Badge>;
-      case 'FG':
+      case LEDGER_TYPE.FG:
         return <Badge className="bg-success/10 text-success border-success/20">Finished Goods</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;

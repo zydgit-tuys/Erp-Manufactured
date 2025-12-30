@@ -31,13 +31,19 @@ import {
   InventoryAdjustments,
   InternalTransfers,
 } from "./pages/inventory";
+import CreateInternalTransfer from "./pages/inventory/CreateInternalTransfer";
+import InternalTransferDetail from "./pages/inventory/InternalTransferDetail";
+import MarginAnalysis from '@/pages/reports/MarginAnalysis';
+import TeamManagement from '@/pages/settings/TeamManagement';
 
 // Manufacturing pages
 // Manufacturing pages
 // Production pages
 import BOMs from "./pages/production/BOMs";
 import CreateBOM from "./pages/production/CreateBOM";
+import BOMDetail from "./pages/production/BOMDetail";
 import WorkOrders from "./pages/production/WorkOrders";
+import WorkOrderDetail from "./pages/production/WorkOrderDetail";
 import Operations from "./pages/production/Operations";
 
 // Purchasing pages
@@ -93,18 +99,27 @@ const App = () => (
                 <Route path="/coa" element={<ProtectedRoute><ChartOfAccounts /></ProtectedRoute>} />
                 <Route path="/periods" element={<ProtectedRoute><AccountingPeriods /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/settings/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
 
                 {/* Inventory Routes */}
                 <Route path="/inventory/raw" element={<ProtectedRoute><RawMaterialLedger /></ProtectedRoute>} />
                 <Route path="/inventory/wip" element={<ProtectedRoute><WipLedger /></ProtectedRoute>} />
                 <Route path="/inventory/fg" element={<ProtectedRoute><FinishedGoodsLedger /></ProtectedRoute>} />
-                <Route path="/inventory/adjustments" element={<ProtectedRoute><InventoryAdjustments /></ProtectedRoute>} />
-                <Route path="/inventory/transfers" element={<ProtectedRoute><InternalTransfers /></ProtectedRoute>} />
+                <Route path="/inventory/adjustments" element={<InventoryAdjustments />} />
+                <Route path="/inventory/transfers" element={<InternalTransfers />} />
+
+                <Route path="/reports/margin" element={<MarginAnalysis />} />
+
+                {/* Manufacturing Routes */}
+                <Route path="/inventory/transfers/new" element={<ProtectedRoute><CreateInternalTransfer /></ProtectedRoute>} />
+                <Route path="/inventory/transfers/:id" element={<ProtectedRoute><InternalTransferDetail /></ProtectedRoute>} />
 
                 {/* Manufacturing Routes */}
                 <Route path="/production/boms" element={<ProtectedRoute><BOMs /></ProtectedRoute>} />
                 <Route path="/production/boms/create" element={<ProtectedRoute><CreateBOM /></ProtectedRoute>} />
+                <Route path="/production/boms/:id" element={<ProtectedRoute><BOMDetail /></ProtectedRoute>} />
                 <Route path="/production/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
+                <Route path="/production/work-orders/:id" element={<ProtectedRoute><WorkOrderDetail /></ProtectedRoute>} />
                 <Route path="/production/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
 
                 {/* Purchasing Routes */}
